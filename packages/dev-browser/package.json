@@ -12,7 +12,8 @@
     "build": "bun x tsup src/index.ts src/client.ts src/dom/index.ts --format esm --dts",
     "start": "bun x tsx src/index.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "dump-hn-tree": "bun x tsx scripts/dump-hn-tree.ts"
   },
   "dependencies": {
     "express": "^4.21.0",

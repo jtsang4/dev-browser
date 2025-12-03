@@ -193,7 +193,7 @@ describe('serializeTree', () => {
 		expect(selectorMap.size).toBe(2);
 	});
 
-	test('uses tab indentation for depth', async () => {
+	test('outputs flat structure without nesting for structural elements', async () => {
 		const tree = await setContent(`
 			<div>
 				<button>Nested</button>
@@ -201,11 +201,14 @@ describe('serializeTree', () => {
 		`);
 
 		const { tree: treeStr } = serializeTree(tree);
-		const lines = treeStr.split('\n');
-		const buttonLine = lines.find((l) => l.includes('<button'));
+		const lines = treeStr.split('\n').filter((l) => l.trim());
 
-		// Button should be indented (at least 1 tab)
-		expect(buttonLine).toMatch(/^\t+/);
+		// Button should NOT be indented - flat output
+		const buttonLine = lines.find((l) => l.includes('<button'));
+		expect(buttonLine).not.toMatch(/^\t/);
+
+		// Should not output the div wrapper
+		expect(treeStr).not.toContain('<div');
 	});
 
 	test('uses self-closing tags for empty elements', async () => {

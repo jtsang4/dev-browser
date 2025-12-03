@@ -1,12 +1,56 @@
 /**
  * Tree serialization for LLM output
  * Converts processed DOM tree to browser-use format string
+ *
+ * Key design: Only output "meaningful" nodes - interactive elements, scrollable containers,
+ * shadow DOM, and iframes. Structural wrappers (table, tr, td, div, span) are traversed
+ * but not output, resulting in a flat, LLM-friendly format.
  */
 
 import type { RawDOMNode, LLMTreeResult, GetLLMTreeOptions, ProcessedNode } from './types.js';
 import { DEFAULT_INCLUDE_ATTRIBUTES } from './types.js';
 import { isInteractive } from './interactive.js';
 import { isVisible } from './visibility.js';
+
+/**
+ * Tags that are purely structural and should not be output
+ * Their children are still traversed
+ */
+const STRUCTURAL_TAGS = new Set([
+	'div',
+	'span',
+	'section',
+	'article',
+	'main',
+	'aside',
+	'header',
+	'footer',
+	'nav',
+	'table',
+	'tbody',
+	'thead',
+	'tfoot',
+	'tr',
+	'td',
+	'th',
+	'colgroup',
+	'col',
+	'ul',
+	'ol',
+	'li',
+	'dl',
+	'dt',
+	'dd',
+	'figure',
+	'figcaption',
+	'center',
+	'p',
+	'br',
+	'hr',
+	'form',
+	'fieldset',
+	'legend',
+]);
 
 /**
  * Context for serialization - tracks state across recursive calls
@@ -51,7 +95,7 @@ export function buildSelector(node: RawDOMNode, ancestors: RawDOMNode[] = []): s
 	const path = [...ancestors, node];
 
 	for (let i = 0; i < path.length; i++) {
-		const current = path[i];
+		const current = path[i]!;
 		const currentTag = current.tagName.toLowerCase();
 
 		if (currentTag.startsWith('#') || current.nodeType === 'TEXT_NODE') {
@@ -62,7 +106,7 @@ export function buildSelector(node: RawDOMNode, ancestors: RawDOMNode[] = []): s
 			pathParts.length = 0; // Reset path, start from id
 			pathParts.push(`#${escapeSelector(current.attributes.id)}`);
 		} else if (i > 0) {
-			const parent = path[i - 1];
+			const parent = path[i - 1]!;
 			const sameTagSiblings = parent.children.filter((c) => c.tagName.toLowerCase() === currentTag);
 
 			if (sameTagSiblings.length === 1) {
@@ -164,133 +208,157 @@ export function getScrollInfo(node: RawDOMNode): string {
 }
 
 /**
+ * Check if a node should be output (vs just traversed for children)
+ * Browser-use only outputs "meaningful" nodes:
+ * - Interactive elements (can be clicked, typed into, etc.)
+ * - Scrollable containers
+ * - Shadow DOM roots
+ * - Iframes
+ *
+ * Note: Text content is handled separately via text nodes, not element output
+ */
+function shouldOutput(node: RawDOMNode): boolean {
+	// Always output shadow roots
+	if (node.nodeType === 'DOCUMENT_FRAGMENT_NODE') {
+		return true;
+	}
+
+	// Always output iframes
+	if (node.isFrame) {
+		return true;
+	}
+
+	// Always output interactive elements
+	if (isInteractive(node)) {
+		return true;
+	}
+
+	// Output scrollable containers
+	if (node.isScrollable) {
+		return true;
+	}
+
+	// All other elements (structural or not) are transparent
+	// Their text content is handled via text node children
+	return false;
+}
+
+/**
  * Serialize a single node to string format
+ * Uses flat output - structural elements are traversed but not rendered
+ * Text nodes are output as plain text (browser-use style)
  */
 function serializeNode(
 	node: RawDOMNode,
-	depth: number,
 	ctx: SerializationContext,
 	ancestors: RawDOMNode[]
-): string {
-	const indent = '\t'.repeat(depth);
+): string[] {
 	const tagName = node.tagName.toLowerCase();
 	const lines: string[] = [];
 
-	// Skip text nodes - their content is handled by the parent
+	// Handle text nodes - output visible text content directly (browser-use style)
 	if (node.nodeType === 'TEXT_NODE' || tagName === '#text') {
-		return '';
+		const text = node.textContent?.trim();
+		// Only include meaningful text (2+ chars, matching browser-use)
+		if (text && text.length > 1) {
+			lines.push(text);
+		}
+		return lines;
 	}
 
 	// Skip non-visible elements
 	if (!isVisible(node)) {
-		return '';
+		return [];
 	}
 
-	// Handle shadow roots
+	// Handle shadow roots - always output these with marker
 	if (node.nodeType === 'DOCUMENT_FRAGMENT_NODE') {
-		const shadowMarker = `|SHADOW(${node.shadowMode || 'open'})|`;
-		lines.push(`${indent}${shadowMarker}`);
+		lines.push(`|SHADOW(${node.shadowMode || 'open'})|`);
 
 		for (const child of node.children) {
-			const childOutput = serializeNode(child, depth + 1, ctx, [...ancestors, node]);
-			if (childOutput) {
-				lines.push(childOutput);
-			}
+			lines.push(...serializeNode(child, ctx, [...ancestors, node]));
 		}
 
-		return lines.join('\n');
+		return lines;
 	}
 
-	// Handle iframes
+	// Handle iframes - always output with marker
 	if (node.isFrame && node.contentDocument) {
-		lines.push(`${indent}|IFRAME|`);
+		lines.push(`|IFRAME|`);
+		lines.push(...serializeNode(node.contentDocument, ctx, []));
+		return lines;
+	}
 
-		const contentOutput = serializeNode(node.contentDocument, depth + 1, ctx, []);
-		if (contentOutput) {
-			lines.push(contentOutput);
+	// Determine if this node should be output
+	const shouldOutputNode = shouldOutput(node);
+
+	if (shouldOutputNode) {
+		// Build the element output line
+		const isNodeInteractive = isInteractive(node);
+		let prefix = '';
+
+		if (isNodeInteractive) {
+			ctx.index++;
+			const index = ctx.index;
+
+			// Build and store selector
+			const selector = buildSelector(node, ancestors);
+			ctx.selectorMap.set(index, selector);
+
+			// Check if this is a new element
+			const isNew = ctx.previousState ? !ctx.previousState.has(node.nodeId) : false;
+			prefix = isNew ? `*[${index}]` : `[${index}]`;
 		}
 
-		return lines.join('\n');
-	}
-
-	// Build element string
-	const isNodeInteractive = isInteractive(node);
-	let prefix = '';
-
-	if (isNodeInteractive) {
-		ctx.index++;
-		const index = ctx.index;
-
-		// Build and store selector
-		const selector = buildSelector(node, ancestors);
-		ctx.selectorMap.set(index, selector);
-
-		// Check if this is a new element
-		const isNew = ctx.previousState ? !ctx.previousState.has(node.nodeId) : false;
-		prefix = isNew ? `*[${index}]` : `[${index}]`;
-	}
-
-	// Handle scrollable containers
-	if (node.isScrollable) {
-		const scrollInfo = getScrollInfo(node);
-		prefix = `|SCROLL|${prefix}`;
-
-		if (scrollInfo) {
-			prefix = `${prefix} ${scrollInfo}`;
+		// Handle scrollable containers
+		if (node.isScrollable) {
+			const scrollInfo = getScrollInfo(node);
+			if (isNodeInteractive) {
+				// Scrollable AND interactive - use [SCROLL[N]] format
+				prefix = prefix.replace(/^\[/, '[SCROLL[').replace(/\]$/, ']]');
+				if (scrollInfo) {
+					prefix = `${prefix} ${scrollInfo}`;
+				}
+			} else {
+				// Scrollable but not interactive
+				prefix = '|SCROLL|';
+				if (scrollInfo) {
+					prefix = `${prefix} ${scrollInfo}`;
+				}
+			}
 		}
-	}
 
-	// Build attributes
-	const attrString = buildAttributeString(node, ctx.includeAttributes);
-	const attrPart = attrString ? ` ${attrString}` : '';
+		// Build attributes
+		const attrString = buildAttributeString(node, ctx.includeAttributes);
+		const attrPart = attrString ? ` ${attrString}` : '';
 
-	// Build content
-	const textContent = truncateText(node.textContent, ctx.maxTextLength);
+		// Build content - get direct text
+		const textContent = truncateText(node.textContent, ctx.maxTextLength);
 
-	// Check if element has visible element children (not text nodes)
-	const hasVisibleChildren = node.children.some(
-		(c) => c.nodeType !== 'TEXT_NODE' && c.tagName !== '#text' && isVisible(c)
-	);
-	const hasShadowRoots = node.shadowRoots.length > 0;
-
-	if (!hasVisibleChildren && !hasShadowRoots && !textContent) {
-		// Self-closing tag
-		lines.push(`${indent}${prefix}<${tagName}${attrPart} />`);
-	} else if (!hasVisibleChildren && !hasShadowRoots) {
-		// Element with just text content
-		lines.push(`${indent}${prefix}<${tagName}${attrPart}>${textContent}</${tagName}>`);
-	} else {
-		// Element with children
-		if (textContent && !hasVisibleChildren) {
-			lines.push(`${indent}${prefix}<${tagName}${attrPart}>${textContent}</${tagName}>`);
+		// Format element - browser-use uses self-closing style
+		if (textContent) {
+			lines.push(`${prefix}<${tagName}${attrPart}>${textContent}</${tagName}>`);
 		} else {
-			lines.push(`${indent}${prefix}<${tagName}${attrPart}>`);
-
-			// Serialize shadow roots first
-			for (const shadow of node.shadowRoots) {
-				const shadowOutput = serializeNode(shadow, depth + 1, ctx, [...ancestors, node]);
-				if (shadowOutput) {
-					lines.push(shadowOutput);
-				}
-			}
-
-			// Serialize children
-			for (const child of node.children) {
-				const childOutput = serializeNode(child, depth + 1, ctx, [...ancestors, node]);
-				if (childOutput) {
-					lines.push(childOutput);
-				}
-			}
-
-			lines.push(`${indent}</${tagName}>`);
+			lines.push(`${prefix}<${tagName}${attrPart} />`);
 		}
 	}
 
-	return lines.join('\n');
+	// Always process shadow roots
+	for (const shadow of node.shadowRoots) {
+		lines.push(...serializeNode(shadow, ctx, [...ancestors, node]));
+	}
+
+	// Always process children (even for structural elements)
+	for (const child of node.children) {
+		lines.push(...serializeNode(child, ctx, [...ancestors, node]));
+	}
+
+	return lines;
 }
 
 /**
  * Serialize tree to browser-use format string
+ * Output is flat - one element per line, no nesting indentation
  */
 export function serializeTree(
 	root: RawDOMNode,
@@ -304,10 +372,10 @@ export function serializeTree(
 		includeAttributes: DEFAULT_INCLUDE_ATTRIBUTES,
 	};
 
-	const treeString = serializeNode(root, 0, ctx, []);
+	const lines = serializeNode(root, ctx, []);
 
 	return {
-		tree: treeString,
+		tree: lines.join('\n'),
 		selectorMap: ctx.selectorMap,
 	};
 }

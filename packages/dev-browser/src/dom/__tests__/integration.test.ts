@@ -54,8 +54,9 @@ describe('getLLMTree', () => {
 
 		const { tree, selectorMap } = await getLLMTree(page);
 
-		// Empty body still produces a body tag
-		expect(tree).toContain('body');
+		// Empty body produces empty tree (no interactive elements)
+		// browser-use style: only output interactive elements
+		expect(tree).toBe('');
 		expect(selectorMap.size).toBe(0);
 	});
 
@@ -66,7 +67,7 @@ describe('getLLMTree', () => {
 
 		// No interactive elements
 		expect(selectorMap.size).toBe(0);
-		// But tree should have content
+		// But text content IS preserved (browser-use style: text nodes are output)
 		expect(tree).toContain('Just some text content');
 	});
 

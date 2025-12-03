@@ -1,0 +1,325 @@
+# Hacker News LLM Tree
+# Generated at: 2025-12-03T16:59:35.512Z
+# Selector map entries: 230
+
+[1]<a href="https://news.ycombinator.com" />
+[2]<a href="news">Hacker News</a>
+[3]<a href="newest">new</a>
+[4]<a href="front">past</a>
+[5]<a href="newcomments">comments</a>
+[6]<a href="ask">ask</a>
+[7]<a href="show">show</a>
+[8]<a href="jobs">jobs</a>
+[9]<a href="submit">submit</a>
+[10]<a href="login?goto=news">login</a>
+1.
+[11]<a id="up_46134443" href="vote?id=46134443&how=up&goto=news" />
+[12]<a href="https://www.nber.org/papers/w34524">Congressional lawmakers 47% pts better at picking stocks</a>
+[13]<a href="from?site=nber.org" />
+513 points
+by
+[14]<a class="hnuser" href="user?id=mhb">mhb</a>
+[15]<a href="item?id=46134443">3 hours ago</a>
+[16]<a href="hide?id=46134443&goto=news">hide</a>
+[17]<a href="item?id=46134443">318 comments</a>
+2.
+[18]<a id="up_46136023" href="vote?id=46136023&how=up&goto=news" />
+[19]<a href="https://github.com/minio/minio/commit/27742d469462e1561c776f88ca7a1f26816d69e2">MinIO is now in maintenance-mode</a>
+[20]<a href="from?site=github.com/minio" />
+86 points
+by
+[21]<a class="hnuser" href="user?id=hajtom">hajtom</a>
+[22]<a href="item?id=46136023">58 minutes ago</a>
+[23]<a href="hide?id=46136023&goto=news">hide</a>
+[24]<a href="item?id=46136023">40 comments</a>
+3.
+[25]<a id="up_46136067" href="vote?id=46136067&how=up&goto=news" />
+[26]<a href="https://www.wiz.io/blog/critical-vulnerability-in-react-cve-2025-55182">Critical RCE Vulnerabilities in React and Next.js</a>
+[27]<a href="from?site=wiz.io" />
+84 points
+by
+[28]<a class="hnuser" href="user?id=gonepivoting">gonepivoting</a>
+[29]<a href="item?id=46136067">55 minutes ago</a>
+[30]<a href="hide?id=46136067&goto=news">hide</a>
+[31]<a href="item?id=46136067">17 comments</a>
+4.
+[32]<a id="up_46133622" href="vote?id=46133622&how=up&goto=news" />
+[33]<a href="https://xania.org/202512/03-more-adding-integers">You Can't Fool the Optimizer</a>
+[34]<a href="from?site=xania.org" />
+159 points
+by
+[35]<a class="hnuser" href="user?id=HeliumHydride">HeliumHydride</a>
+[36]<a href="item?id=46133622">4 hours ago</a>
+[37]<a href="hide?id=46133622&goto=news">hide</a>
+[38]<a href="item?id=46133622">83 comments</a>
+5.
+[39]<a id="up_46134991" href="vote?id=46134991&how=up&goto=news" />
+[40]<a href="https://yunfan.zone/gswt_webpage/">GSWT: Gaussian Splatting Wang Tiles</a>
+[41]<a href="from?site=yunfan.zone" />
+40 points
+by
+[42]<a class="hnuser" href="user?id=klaussilveira">klaussilveira</a>
+[43]<a href="item?id=46134991">2 hours ago</a>
+[44]<a href="hide?id=46134991&goto=news">hide</a>
+[45]<a href="item?id=46134991">11 comments</a>
+6.
+[46]<a id="up_46072280" href="vote?id=46072280&how=up&goto=news" />
+[47]<a href="https://loopmaster.xyz/tutorials/how-to-synthesize-a-house-loop">How to Synthesize a House Loop</a>
+[48]<a href="from?site=loopmaster.xyz" />
+40 points
+by
+[49]<a class="hnuser" href="user?id=stagas">stagas</a>
+[50]<a href="item?id=46072280">2 hours ago</a>
+[51]<a href="hide?id=46072280&goto=news">hide</a>
+[52]<a href="item?id=46072280">8 comments</a>
+7.
+[53]<a id="up_46135627" href="vote?id=46135627&how=up&goto=news" />
+[54]<a href="https://alexene.dev/2025/12/03/Why-do-my-headphones-buzz-when-i-run-my-game.html">Why are my headphones buzzing whenever I run my game?</a>
+[55]<a href="from?site=alexene.dev" />
+54 points
+by
+[56]<a class="hnuser" href="user?id=pacificat0r">pacificat0r</a>
+[57]<a href="item?id=46135627">1 hour ago</a>
+[58]<a href="hide?id=46135627&goto=news">hide</a>
+[59]<a href="item?id=46135627">45 comments</a>
+8.
+[60]<a id="up_46124267" href="vote?id=46124267&how=up&goto=news" />
+[61]<a href="https://bun.com/blog/bun-joins-anthropic">Anthropic acquires Bun</a>
+[62]<a href="from?site=bun.com" />
+2054 points
+by
+[63]<a class="hnuser" href="user?id=ryanvogel">ryanvogel</a>
+[64]<a href="item?id=46124267">22 hours ago</a>
+[65]<a href="hide?id=46124267&goto=news">hide</a>
+[66]<a href="item?id=46124267">982 comments</a>
+9.
+[67]<a id="up_46050855" href="vote?id=46050855&how=up&goto=news" />
+[68]<a href="https://purplesyringa.moe/blog/a-look-at-rust-from-2012/">A Look at Rust from 2012</a>
+[69]<a href="from?site=purplesyringa.moe" />
+104 points
+by
+[70]<a class="hnuser" href="user?id=todsacerdoti">todsacerdoti</a>
+[71]<a href="item?id=46050855">5 hours ago</a>
+[72]<a href="hide?id=46050855&goto=news">hide</a>
+[73]<a href="item?id=46050855">18 comments</a>
+10.
+[74]<a id="up_46136026" href="vote?id=46136026&how=up&goto=news" />
+[75]<a href="https://github.com/vercel/next.js/security/advisories/GHSA-9qr9-h5gf-34mp">RCE Vulnerability in React and Next.js</a>
+[76]<a href="from?site=github.com/vercel" />
+18 points
+by
+[77]<a class="hnuser" href="user?id=rayhaanj">rayhaanj</a>
+[78]<a href="item?id=46136026">58 minutes ago</a>
+[79]<a href="hide?id=46136026&goto=news">hide</a>
+[80]<a href="item?id=46136026">6 comments</a>
+11.
+[81]<a id="up_46135008" href="vote?id=46135008&how=up&goto=news" />
+[82]<a href="https://healthisotherpeople.substack.com/p/an-abominable-creature">Mapping Every Dollar of America's $5T Healthcare System</a>
+[83]<a href="from?site=healthisotherpeople.substack.com" />
+87 points
+by
+[84]<a class="hnuser" href="user?id=brandonb">brandonb</a>
+[85]<a href="item?id=46135008">2 hours ago</a>
+[86]<a href="hide?id=46135008&goto=news">hide</a>
+[87]<a href="item?id=46135008">67 comments</a>
+12.
+[88]<a id="up_46124324" href="vote?id=46124324&how=up&goto=news" />
+[89]<a href="https://www.businessinsider.com/ibm-ceo-big-tech-ai-capex-data-center-spending-2025-12">IBM CEO says there is 'no way' spending on AI data centers will pay off</a>
+[90]<a href="from?site=businessinsider.com" />
+747 points
+by
+[91]<a class="hnuser" href="user?id=nabla9">nabla9</a>
+[92]<a href="item?id=46124324">22 hours ago</a>
+[93]<a href="hide?id=46124324&goto=news">hide</a>
+[94]<a href="item?id=46124324">840 comments</a>
+13.
+[95]<a id="up_46134178" href="vote?id=46134178&how=up&goto=news" />
+[96]<a href="https://www.tomshardware.com/video-games/pc-gaming/helldivers-2-install-size-slashed-from-154gb-to-just-23gb-85-percent-reduction-accomplished-by-de-duplicating-game-data-an-optimization-for-older-mechanical-hard-drives">Helldivers 2 devs slash install size from 154GB to 23GB</a>
+[97]<a href="from?site=tomshardware.com" />
+230 points
+by
+[98]<a class="hnuser" href="user?id=doener">doener</a>
+[99]<a href="item?id=46134178">3 hours ago</a>
+[100]<a href="hide?id=46134178&goto=news">hide</a>
+[101]<a href="item?id=46134178">163 comments</a>
+14.
+[102]<a id="up_46131406" href="vote?id=46131406&how=up&goto=news" />
+[103]<a href="https://www.theregister.com/2025/12/02/zig_quits_github_microsoft_ai_obsession/">Zig quits GitHub, says Microsoft's AI obsession has ruined the service</a>
+[104]<a href="from?site=theregister.com" />
+708 points
+by
+[105]<a class="hnuser" href="user?id=Brajeshwar">Brajeshwar</a>
+[106]<a href="item?id=46131406">9 hours ago</a>
+[107]<a href="hide?id=46131406&goto=news">hide</a>
+[108]<a href="item?id=46131406">380 comments</a>
+15.
+[109]<a id="up_46130335" href="vote?id=46130335&how=up&goto=news" />
+[110]<a href="https://medium.com/atari-club/interview-with-rollercoaster-tycoons-creator-chris-sawyer-684a0efb0f13">Interview with RollerCoaster Tycoon's Creator, Chris Sawyer (2024)</a>
+[111]<a href="from?site=medium.com/atari-club" />
+221 points
+by
+[112]<a class="hnuser" href="user?id=areoform">areoform</a>
+[113]<a href="item?id=46130335">12 hours ago</a>
+[114]<a href="hide?id=46130335&goto=news">hide</a>
+[115]<a href="item?id=46130335">39 comments</a>
+16.
+[116]<a id="up_46133141" href="vote?id=46133141&how=up&goto=news" />
+[117]<a href="https://martinalderson.com/posts/are-we-really-repeating-the-telecoms-crash-with-ai-datacenters/">Are we repeating the telecoms crash with AI datacenters?</a>
+[118]<a href="from?site=martinalderson.com" />
+42 points
+by
+[119]<a class="hnuser" href="user?id=davedx">davedx</a>
+[120]<a href="item?id=46133141">5 hours ago</a>
+[121]<a href="hide?id=46133141&goto=news">hide</a>
+[122]<a href="item?id=46133141">9 comments</a>
+17.
+[123]<a id="up_46054467" href="vote?id=46054467&how=up&goto=news" />
+[124]<a href="https://www.cybertec-postgresql.com/en/super-fast-aggregations-in-postgresql-19/">Super fast aggregations in PostgreSQL 19</a>
+[125]<a href="from?site=cybertec-postgresql.com" />
+172 points
+by
+[126]<a class="hnuser" href="user?id=jnord">jnord</a>
+[127]<a href="item?id=46054467">12 hours ago</a>
+[128]<a href="hide?id=46054467&goto=news">hide</a>
+[129]<a href="item?id=46054467">16 comments</a>
+18.
+[130]<a id="up_46135388" href="vote?id=46135388&how=up&goto=news" />
+[131]<a href="https://finance.yahoo.com/news/microsoft-lowers-ai-software-sales-141531121.html">Microsoft lowers AI software sales quota</a>
+[132]<a href="from?site=yahoo.com" />
+55 points
+by
+[133]<a class="hnuser" href="user?id=ramoz">ramoz</a>
+[134]<a href="item?id=46135388">1 hour ago</a>
+[135]<a href="hide?id=46135388&goto=news">hide</a>
+[136]<a href="item?id=46135388">41 comments</a>
+19.
+[137]<a id="up_46067995" href="vote?id=46067995&how=up&goto=news" />
+[138]<a href="https://spectrum.ieee.org/ai-agents-safety">AI agents break rules under everyday pressure</a>
+[139]<a href="from?site=ieee.org" />
+251 points
+by
+[140]<a class="hnuser" href="user?id=pseudolus">pseudolus</a>
+[141]<a href="item?id=46067995">14 hours ago</a>
+[142]<a href="hide?id=46067995&goto=news">hide</a>
+[143]<a href="item?id=46067995">120 comments</a>
+20.
+[144]<a id="up_46133422" href="vote?id=46133422&how=up&goto=news" />
+[145]<a href="http://fxrant.blogspot.com/2025/12/the-mad-men-in-4k-on-hbo-max-debacle.html">The "Mad Men" in 4K on HBO Max Debacle</a>
+[146]<a href="from?site=fxrant.blogspot.com" />
+281 points
+by
+[147]<a class="hnuser" href="user?id=tosh">tosh</a>
+[148]<a href="item?id=46133422">5 hours ago</a>
+[149]<a href="hide?id=46133422&goto=news">hide</a>
+[150]<a href="item?id=46133422">118 comments</a>
+21.
+[151]<a id="up_46132531" href="vote?id=46132531&how=up&goto=news" />
+[152]<a href="https://vechron.com/2025/12/anthropic-hires-wilson-sonsini-ipo-2026-openai-race/">Anthropic reportedly preparing for $300B IPO</a>
+[153]<a href="from?site=vechron.com" />
+110 points
+by
+[154]<a class="hnuser" href="user?id=GeorgeWoff25">GeorgeWoff25</a>
+[155]<a href="item?id=46132531">7 hours ago</a>
+[156]<a href="hide?id=46132531&goto=news">hide</a>
+[157]<a href="item?id=46132531">87 comments</a>
+22.
+[158]<a id="up_46083133" href="vote?id=46083133&how=up&goto=news" />
+[159]<a href="https://github.com/Wack0/universal-tbxi-patchset">universal-tbxi-patchset: Mac OS New World ROM patchset to boot System 7.5</a>
+[160]<a href="from?site=github.com/wack0" />
+11 points
+by
+[161]<a class="hnuser" href="user?id=classichasclass">classichasclass</a>
+[162]<a href="item?id=46083133">1 hour ago</a>
+[163]<a href="hide?id=46083133&goto=news">hide</a>
+[164]<a href="item?id=46083133">discuss</a>
+23.
+[165]<a id="up_46130907" href="vote?id=46130907&how=up&goto=news" />
+[166]<a href="https://scienceclock.com/microbe-that-could-turn-martian-dust-into-oxygen/">Researchers Find Microbe Capable of Producing Oxygen from Martian Soil</a>
+[167]<a href="from?site=scienceclock.com" />
+76 points
+by
+[168]<a class="hnuser" href="user?id=ashishgupta2209">ashishgupta2209</a>
+[169]<a href="item?id=46130907">10 hours ago</a>
+[170]<a href="hide?id=46130907&goto=news">hide</a>
+[171]<a href="item?id=46130907">31 comments</a>
+24.
+[172]<a id="up_46126217" href="vote?id=46126217&how=up&goto=news" />
+[173]<a href="https://pagedout.institute">Paged Out</a>
+[174]<a href="from?site=pagedout.institute" />
+521 points
+by
+[175]<a class="hnuser" href="user?id=varjag">varjag</a>
+[176]<a href="item?id=46126217">20 hours ago</a>
+[177]<a href="hide?id=46126217&goto=news">hide</a>
+[178]<a href="item?id=46126217">55 comments</a>
+25.
+[179]<a id="up_46058154" href="vote?id=46058154&how=up&goto=news" />
+[180]<a href="https://newsletter.dancohen.org/archive/the-writing-is-on-the-wall-for-handwriting-recognition/">The Writing Is on the Wall for Handwriting Recognition</a>
+[181]<a href="from?site=dancohen.org" />
+128 points
+by
+[182]<a class="hnuser" href="user?id=speckx">speckx</a>
+[183]<a href="item?id=46058154">9 hours ago</a>
+[184]<a href="hide?id=46058154&goto=news">hide</a>
+[185]<a href="item?id=46058154">69 comments</a>
+26.
+[186]<a id="up_46121870" href="vote?id=46121870&how=up&goto=news" />
+[187]<a href="https://www.theverge.com/news/836212/openai-code-red-chatgpt">OpenAI declares 'code red' as Google catches up in AI race</a>
+[188]<a href="from?site=theverge.com" />
+768 points
+by
+[189]<a class="hnuser" href="user?id=goplayoutside">goplayoutside</a>
+[190]<a href="item?id=46121870">1 day ago</a>
+[191]<a href="hide?id=46121870&goto=news">hide</a>
+[192]<a href="item?id=46121870">845 comments</a>
+27.
+[193]<a id="up_46094460" href="vote?id=46094460&how=up&goto=news" />
+[194]<a href="https://snoutcover.com/billie-story">I designed and printed a custom nose guard to help my dog with DLE</a>
+[195]<a href="from?site=snoutcover.com" />
+576 points
+by
+[196]<a class="hnuser" href="user?id=ragswag">ragswag</a>
+[197]<a href="item?id=46094460">1 day ago</a>
+[198]<a href="hide?id=46094460&goto=news">hide</a>
+[199]<a href="item?id=46094460">68 comments</a>
+28.
+[200]<a id="up_46135661" href="vote?id=46135661&how=up&goto=news" />
+[201]<a href="https://www.washingtonpost.com/investigations/2025/12/03/veterans-administration-va-hospitals-health/">VA staff flag dangerous errors in Oracle-built electronic health record</a>
+[202]<a href="from?site=washingtonpost.com" />
+19 points
+by
+[203]<a class="hnuser" href="user?id=ksenzee">ksenzee</a>
+[204]<a href="item?id=46135661">1 hour ago</a>
+[205]<a href="hide?id=46135661&goto=news">hide</a>
+[206]<a href="item?id=46135661">1 comment</a>
+29.
+[207]<a id="up_46133068" href="vote?id=46133068&how=up&goto=news" />
+[208]<a href="https://www.bbc.com/news/articles/clydg2re4d1o">India scraps order to pre-install state-run cyber safety app on smartphones</a>
+[209]<a href="from?site=bbc.com" />
+134 points
+by
+[210]<a class="hnuser" href="user?id=wolpoli">wolpoli</a>
+[211]<a href="item?id=46133068">5 hours ago</a>
+[212]<a href="hide?id=46133068&goto=news">hide</a>
+[213]<a href="item?id=46133068">30 comments</a>
+30.
+[214]<a id="up_46083014" href="vote?id=46083014&how=up&goto=news" />
+[215]<a href="https://queue.acm.org/detail.cfm?id=3372264">Optimizations in C++ compilers: a practical journey</a>
+[216]<a href="from?site=acm.org" />
+14 points
+by
+[217]<a class="hnuser" href="user?id=fanf2">fanf2</a>
+[218]<a href="item?id=46083014">3 hours ago</a>
+[219]<a href="hide?id=46083014&goto=news">hide</a>
+[220]<a href="item?id=46083014">discuss</a>
+[221]<a class="morelink" href="?p=2">More</a>
+[222]<a href="newsguidelines.html">Guidelines</a>
+[223]<a href="newsfaq.html">FAQ</a>
+[224]<a href="lists">Lists</a>
+[225]<a href="https://github.com/HackerNews/API">API</a>
+[226]<a href="security.html">Security</a>
+[227]<a href="https://www.ycombinator.com/legal/">Legal</a>
+[228]<a href="https://www.ycombinator.com/apply/">Apply to YC</a>
+[229]<a href="mailto:hn@ycombinator.com">Contact</a>
+Search:
+[230]<input type="text" name="q" autocomplete="off" />
