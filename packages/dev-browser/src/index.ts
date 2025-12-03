@@ -105,6 +105,11 @@ export async function serve(
       const targetId = await getTargetId(page);
       entry = { page, targetId };
       registry.set(name, entry);
+
+      // Clean up registry when page is closed (e.g., user clicks X)
+      page.on("close", () => {
+        registry.delete(name);
+      });
     }
 
     const response: GetPageResponse = { wsEndpoint, name, targetId: entry.targetId };
