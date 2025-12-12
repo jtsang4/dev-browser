@@ -91,6 +91,36 @@ Prompt Claude to use it! Amp will automatically load the skill when needed.
 
 > Learn more about [Amp's skill support](https://ampcode.com/manual#agent-skills).
 
+## Permissions Configuration
+
+By default, Claude will prompt for permission on every script execution. You can configure it to allowlist specific commands to bypass this.
+
+### Option 1: Skip All Permissions
+
+You can also run it in YOLO mode bypassing all permission prompts:
+
+```bash
+claude --dangerously-skip-permissions
+```
+
+**Note:** This skips all security prompts, so only use in trusted environments.
+
+### Option 2: Allowlist Specific Commands
+
+Add to your `~/.claude/settings.json` (user-level, applies to all projects):
+
+```json
+{
+  "permissions": {
+    "allow": ["Bash(bun x tsx:*)"]
+  }
+}
+```
+
+This allowlists the `bun x tsx` command that runs the browser automation scripts, regardless of which directory the skill is installed in.
+
+For project-level settings, add to `.claude/settings.json` in your project root.
+
 ## Usage
 
 Once installed, just ask Claude to interact with your browser. Here are some example prompts:
