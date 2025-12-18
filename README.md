@@ -93,6 +93,26 @@ Prompt Claude to use it! Amp will automatically load the skill when needed.
 
 > Learn more about [Amp's skill support](https://ampcode.com/manual#agent-skills).
 
+### For Codex (CLI)
+
+Codex automatically detects skills from your `~/.codex/skills` directory.
+
+#### Step 1: Install the Skill
+
+```bash
+# Create skills directory if it doesn't exist
+mkdir -p ~/.codex/skills
+
+# Clone the repo and copy the skill
+git clone https://github.com/sawyerhood/dev-browser /tmp/dev-browser-skill
+cp -r /tmp/dev-browser-skill/skills/dev-browser ~/.codex/skills/dev-browser
+rm -rf /tmp/dev-browser-skill
+```
+
+#### Step 2: Use It!
+
+Restart Codex after installation, then ask it to use dev-browser.
+
 ## Permissions Configuration
 
 By default, Claude will prompt for permission on every script execution. You can configure it to allowlist specific commands to bypass this.
