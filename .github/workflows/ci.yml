@@ -18,18 +18,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: "20"
 
       - name: Install dependencies
         working-directory: skills/dev-browser
-        run: bun install --frozen-lockfile
+        run: npm install
 
       - name: TypeScript check
         working-directory: skills/dev-browser
-        run: bun x tsc --noEmit
+        run: npx tsc --noEmit
 
   test:
     name: Tests
@@ -38,22 +38,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: "20"
 
       - name: Install dependencies
         working-directory: skills/dev-browser
-        run: bun install --frozen-lockfile
+        run: npm install
 
       - name: Install Playwright browsers
         working-directory: skills/dev-browser
-        run: bun x playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium
 
       - name: Run tests
         working-directory: skills/dev-browser
-        run: bun run test
+        run: npm test
 
   format:
     name: Formatting
@@ -62,13 +62,14 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
         with:
-          bun-version: latest
+          node-version: "20"
+          cache: "npm"
 
       - name: Install dependencies
-        run: bun install --frozen-lockfile
+        run: npm ci
 
       - name: Check formatting
-        run: bun run format:check
+        run: npm run format:check
