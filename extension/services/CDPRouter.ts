@@ -14,10 +14,38 @@ export interface CDPRouterDeps {
 export class CDPRouter {
   private logger: Logger;
   private tabManager: TabManager;
+  private devBrowserGroupId: number | null = null;
 
   constructor(deps: CDPRouterDeps) {
     this.logger = deps.logger;
     this.tabManager = deps.tabManager;
+  }
+
+  /**
+   * Gets or creates the "Dev Browser" tab group, returning its ID.
+   */
+  private async getOrCreateDevBrowserGroup(tabId: number): Promise<number> {
+    // If we have a cached group ID, verify it still exists
+    if (this.devBrowserGroupId !== null) {
+      try {
+        await chrome.tabGroups.get(this.devBrowserGroupId);
+        // Group exists, add tab to it
+        await chrome.tabs.group({ tabIds: [tabId], groupId: this.devBrowserGroupId });
+        return this.devBrowserGroupId;
+      } catch {
+        // Group no longer exists, reset cache
+        this.devBrowserGroupId = null;
+      }
+    }
+
+    // Create a new group with this tab
+    const groupId = await chrome.tabs.group({ tabIds: [tabId] });
+    await chrome.tabGroups.update(groupId, {
+      title: "Dev Browser",
+      color: "blue",
+    });
+    this.devBrowserGroupId = groupId;
+    return groupId;
   }
 
   /**
@@ -92,6 +120,10 @@ export class CDPRouter {
         this.logger.debug("Creating new tab with URL:", url);
         const tab = await chrome.tabs.create({ url, active: false });
         if (!tab.id) throw new Error("Failed to create tab");
+
+        // Add tab to "Dev Browser" group
+        await this.getOrCreateDevBrowserGroup(tab.id);
+
         await new Promise((resolve) => setTimeout(resolve, 100));
         const targetInfo = await this.tabManager.attach(tab.id);
         return { targetId: targetInfo.targetId };
