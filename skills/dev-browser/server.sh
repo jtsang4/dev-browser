@@ -17,8 +17,8 @@ while [[ "$#" -gt 0 ]]; do
 done
 
 echo "Installing dependencies..."
-npm install
+pnpm install
 
 echo "Starting dev-browser server..."
 export HEADLESS=$HEADLESS
-npx tsx scripts/start-server.ts
+pnpm exec tsx scripts/start-server.ts

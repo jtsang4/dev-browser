@@ -1,14 +1,15 @@
 {
   "name": "dev-browser",
   "version": "0.0.1",
+  "packageManager": "pnpm@10.28.2",
   "type": "module",
   "imports": {
     "@/*": "./src/*"
   },
   "scripts": {
-    "start-server": "npx tsx scripts/start-server.ts",
-    "start-extension": "npx tsx scripts/start-relay.ts",
-    "dev": "npx tsx --watch src/index.ts",
+    "start-server": "tsx scripts/start-server.ts",
+    "start-extension": "tsx scripts/start-relay.ts",
+    "dev": "tsx --watch src/index.ts",
     "test": "vitest run",
     "test:watch": "vitest"
   },

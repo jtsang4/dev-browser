@@ -39,7 +39,7 @@ Connects to user's existing Chrome browser. Use this when:
 **Start the relay server:**
 
 ```bash
-cd skills/dev-browser && npm i && npm run start-extension &
+cd skills/dev-browser && pnpm i && pnpm run start-extension &
 ```
 
 Wait for `Waiting for extension to connect...` followed by `Extension connected` in the console. To know that a client has connected and the browser is ready to be controlled.
@@ -57,7 +57,7 @@ If the extension hasn't connected yet, tell the user to launch and activate it. 
 Execute scripts inline using heredocs:
 
 ```bash
-cd skills/dev-browser && npx tsx <<'EOF'
+cd skills/dev-browser && pnpm exec tsx <<'EOF'
 import { connect, waitForPageLoad } from "@/client.js";
 
 const client = await connect();
@@ -193,7 +193,7 @@ await element.click();
 Page state persists after failures. Debug with:
 
 ```bash
-cd skills/dev-browser && npx tsx <<'EOF'
+cd skills/dev-browser && pnpm exec tsx <<'EOF'
 import { connect } from "@/client.js";
 
 const client = await connect();

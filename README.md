@@ -13,7 +13,7 @@ A browser automation plugin for [Claude Code](https://docs.anthropic.com/en/docs
 ## Prerequisites
 
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI installed
-- [Node.js](https://nodejs.org) (v18 or later) with npm
+- [Node.js](https://nodejs.org) (v18 or later) with pnpm
 
 ## Installation
 
@@ -43,7 +43,7 @@ rm -rf /tmp/dev-browser-skill
 **Amp only:** Start the server manually before use:
 
 ```bash
-cd ~/.claude/skills/dev-browser && npm install && npm run start-server
+cd ~/.claude/skills/dev-browser && pnpm install && pnpm run start-server
 ```
 
 ### Chrome Extension (Optional)
@@ -73,7 +73,7 @@ To skip permission prompts, add to `~/.claude/settings.json`:
 ```json
 {
   "permissions": {
-    "allow": ["Skill(dev-browser:dev-browser)", "Bash(npx tsx:*)"]
+    "allow": ["Skill(dev-browser:dev-browser)", "Bash(pnpm exec tsx:*)"]
   }
 }
 ```

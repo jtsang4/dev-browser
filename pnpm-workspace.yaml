@@ -1,0 +1,7 @@
+packages:
+  - skills/*
+  - extension
+
+onlyBuiltDependencies:
+  - esbuild
+  - spawn-sync

@@ -17,7 +17,7 @@ For bug reports, include steps to reproduce. For feature requests, explain the u
 1. Open an issue describing the proposed change
 2. Wait for maintainer feedback before starting work
 3. Fork the repo and create a branch from `main`
-4. Make your changes, ensuring tests pass (`npm test`) and types check (`npx tsc --noEmit`)
+4. Make your changes, ensuring tests pass (`pnpm --filter dev-browser test`) and types check (`pnpm --filter dev-browser exec tsc --noEmit`)
 5. Submit a PR referencing the related issue
 
 ## Questions?

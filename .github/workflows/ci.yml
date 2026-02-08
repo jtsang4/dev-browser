@@ -22,14 +22,19 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.2
 
       - name: Install dependencies
-        working-directory: skills/dev-browser
-        run: npm install
+        run: pnpm install --frozen-lockfile
 
       - name: TypeScript check
-        working-directory: skills/dev-browser
-        run: npx tsc --noEmit
+        run: pnpm --filter dev-browser exec tsc --noEmit
 
   test:
     name: Tests
@@ -42,18 +47,28 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.2
 
       - name: Install dependencies
-        working-directory: skills/dev-browser
-        run: npm install
+        run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
-        working-directory: skills/dev-browser
-        run: npx playwright install --with-deps chromium
+        run: pnpm --filter dev-browser exec playwright install --with-deps chromium
 
       - name: Run tests
-        working-directory: skills/dev-browser
-        run: npm test
+        run: pnpm --filter dev-browser test
+
+      - name: Build extension
+        run: pnpm --filter dev-browser-extension build
+
+      - name: Run extension tests
+        run: pnpm --filter dev-browser-extension test:run
 
   format:
     name: Formatting
@@ -66,10 +81,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
-          cache: "npm"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.2
 
       - name: Install dependencies
-        run: npm ci
+        run: pnpm install --frozen-lockfile
 
       - name: Check formatting
-        run: npm run format:check
+        run: pnpm format:check

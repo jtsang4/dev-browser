@@ -1,5 +1,6 @@
 {
   "name": "browser-skill",
+  "packageManager": "pnpm@10.28.2",
   "type": "module",
   "private": true,
   "devDependencies": {
@@ -11,7 +12,13 @@
   "scripts": {
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "dev-browser:start": "pnpm --filter dev-browser start-server",
+    "dev-browser:dev": "pnpm --filter dev-browser dev",
+    "dev-browser:test": "pnpm --filter dev-browser test",
+    "dev-browser:typecheck": "pnpm --filter dev-browser exec tsc --noEmit",
+    "extension:dev": "pnpm --filter dev-browser-extension dev",
+    "extension:build": "pnpm --filter dev-browser-extension build"
   },
   "lint-staged": {
     "*.{js,ts,tsx,json,md,yml,yaml}": "prettier --write"

@@ -6,4 +6,4 @@ coverage/
 tmp/
 temp/
 profiles/
-bun.lock
+pnpm-lock.yaml
