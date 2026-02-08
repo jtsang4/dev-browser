@@ -40,10 +40,17 @@ cp -r /tmp/dev-browser-skill/skills/dev-browser $SKILLS_DIR/dev-browser
 rm -rf /tmp/dev-browser-skill
 ```
 
-**Amp only:** Start the server manually before use:
+Install CLI globally (Amp and Codex):
 
 ```bash
-cd ~/.claude/skills/dev-browser && pnpm install && pnpm run start-server
+pnpm add -g dev-browser-cli
+# or: npm install -g dev-browser-cli
+```
+
+Start daemon when needed:
+
+```bash
+dev-browser daemon ensure --mode launch --json
 ```
 
 ### Chrome Extension (Optional)
@@ -73,7 +80,7 @@ To skip permission prompts, add to `~/.claude/settings.json`:
 ```json
 {
   "permissions": {
-    "allow": ["Skill(dev-browser:dev-browser)", "Bash(pnpm exec tsx:*)"]
+    "allow": ["Skill(dev-browser:dev-browser)", "Bash(dev-browser:*)"]
   }
 }
 ```

@@ -5,207 +5,108 @@ description: Browser automation with persistent page state. Use when users ask t
 
 # Dev Browser Skill
 
-Browser automation that maintains page state across script executions. Write small, focused scripts to accomplish tasks incrementally. Once you've proven out part of a workflow and there is repeated work to be done, you can write a script to do the repeated work in a single execution.
+Use `dev-browser` CLI to run multi-step browser automation with persistent page state.
 
-## Choosing Your Approach
+## Defaults
 
-- **Local/source-available sites**: Read the source code first to write selectors directly
-- **Unknown page layouts**: Use `getAISnapshot()` to discover elements and `selectSnapshotRef()` to interact with them
-- **Visual feedback**: Take screenshots to see what the user sees
+- **Prefer multi-step execution**: Use one `run --code` block for multiple actions whenever possible.
+- **Reuse page names**: Keep the same `--page` name across turns to preserve state.
+- **Control via daemon commands**: Explicitly use `ensure/status/stop/clean`.
+- **CLI must be available**: Ensure `dev-browser` command is installed and on `PATH` (from the separated CLI package).
 
 ## Setup
 
-Two modes available. Ask the user if unclear which to use.
-
-### Standalone Mode (Default)
-
-Launches a new Chromium browser for fresh automation sessions.
+If `dev-browser` command is missing, install CLI globally:
 
 ```bash
-./skills/dev-browser/server.sh &
+pnpm add -g dev-browser-cli
+# or: npm install -g dev-browser-cli
 ```
 
-Add `--headless` flag if user requests it. **Wait for the `Ready` message before running scripts.**
-
-### Extension Mode
-
-Connects to user's existing Chrome browser. Use this when:
-
-- The user is already logged into sites and wants you to do things behind an authed experience that isn't local dev.
-- The user asks you to use the extension
-
-**Important**: The core flow is still the same. You create named pages inside of their browser.
-
-**Start the relay server:**
+Ensure daemon is running before actions:
 
 ```bash
-cd skills/dev-browser && pnpm i && pnpm run start-extension &
+dev-browser daemon ensure --mode launch --json
 ```
 
-Wait for `Waiting for extension to connect...` followed by `Extension connected` in the console. To know that a client has connected and the browser is ready to be controlled.
-**Workflow:**
-
-1. Scripts call `client.page("name")` just like the normal mode to create new pages / connect to existing ones.
-2. Automation runs on the user's actual browser session
-
-If the extension hasn't connected yet, tell the user to launch and activate it. Download link: https://github.com/SawyerHood/dev-browser/releases
-
-## Writing Scripts
-
-> **Run all scripts from `skills/dev-browser/` directory.** The `@/` import alias requires this directory's config.
-
-Execute scripts inline using heredocs:
+Use extension mode when user wants their existing Chrome session:
 
 ```bash
-cd skills/dev-browser && pnpm exec tsx <<'EOF'
-import { connect, waitForPageLoad } from "@/client.js";
+dev-browser daemon ensure --mode extension --json
+```
 
-const client = await connect();
-// Create page with custom viewport size (optional)
-const page = await client.page("example", { viewport: { width: 1920, height: 1080 } });
+Useful lifecycle commands:
 
+```bash
+dev-browser daemon status --json
+dev-browser daemon stop --mode launch
+dev-browser daemon clean --stale-only
+dev-browser doctor
+```
+
+## Run Multi-Step Scripts
+
+Use `run --code` as the primary execution command.
+
+```bash
+dev-browser run --mode launch --page checkout --json --code '
 await page.goto("https://example.com");
-await waitForPageLoad(page);
-
-console.log({ title: await page.title(), url: page.url() });
-await client.disconnect();
-EOF
+await helpers.waitForPageLoad(page);
+await page.fill("input[name=email]", "test@example.com");
+await page.click("button[type=submit]");
+return { url: page.url(), title: await page.title() };
+'
 ```
 
-**Write to `tmp/` files only when** the script needs reuse, is complex, or user explicitly requests it.
+### Execution Context
 
-### Key Principles
+`--code` runs as async JavaScript function body with injected values:
 
-1. **Small scripts**: Each script does ONE thing (navigate, click, fill, check)
-2. **Evaluate state**: Log/return state at the end to decide next steps
-3. **Descriptive page names**: Use `"checkout"`, `"login"`, not `"main"`
-4. **Disconnect to exit**: `await client.disconnect()` - pages persist on server
-5. **Plain JS in evaluate**: `page.evaluate()` runs in browser - no TypeScript syntax
+- `page` - persistent Playwright `Page` for `--page` name
+- `client` - dev-browser client instance
+- `helpers` - utility helpers (`waitForPageLoad`)
+- `log(entry)` - structured step logs collected in output
 
-## Workflow Loop
+### Output Contract
 
-Follow this pattern for complex tasks:
+Success (`ok: true`) includes:
 
-1. **Write a script** to perform one action
-2. **Run it** and observe the output
-3. **Evaluate** - did it work? What's the current state?
-4. **Decide** - is the task complete or do we need another script?
-5. **Repeat** until task is done
+- `mode`
+- `pageName`
+- `data` (your returned value)
+- `logs`
+- `timingMs`
 
-### No TypeScript in Browser Context
+Failure (`ok: false`) includes:
 
-Code passed to `page.evaluate()` runs in the browser, which doesn't understand TypeScript:
+- `error.code` (`RUN_TIMEOUT` or `RUN_EXEC_ERROR`)
+- `error.message`
+- `error.retryable`
 
-```typescript
-// ✅ Correct: plain JavaScript
-const text = await page.evaluate(() => {
-  return document.body.innerText;
-});
+## Workflow Pattern
 
-// ❌ Wrong: TypeScript syntax will fail at runtime
-const text = await page.evaluate(() => {
-  const el: HTMLElement = document.body; // Type annotation breaks in browser!
-  return el.innerText;
-});
-```
+For complex tasks:
 
-## Scraping Data
+1. `daemon ensure`
+2. Run one multi-step `run --code`
+3. Evaluate JSON result
+4. If needed, run another `run --code` with same `--page`
+5. On completion, `daemon stop` (or rely on idle TTL)
 
-For scraping large datasets, intercept and replay network requests rather than scrolling the DOM. See [references/scraping.md](references/scraping.md) for the complete guide covering request capture, schema discovery, and paginated API replay.
+## Page State Inspection
 
-## Client API
-
-```typescript
-const client = await connect();
-
-// Get or create named page (viewport only applies to new pages)
-const page = await client.page("name");
-const pageWithSize = await client.page("name", { viewport: { width: 1920, height: 1080 } });
-
-const pages = await client.list(); // List all page names
-await client.close("name"); // Close a page
-await client.disconnect(); // Disconnect (pages persist)
-
-// ARIA Snapshot methods
-const snapshot = await client.getAISnapshot("name"); // Get accessibility tree
-const element = await client.selectSnapshotRef("name", "e5"); // Get element by ref
-```
-
-The `page` object is a standard Playwright Page.
-
-## Waiting
-
-```typescript
-import { waitForPageLoad } from "@/client.js";
-
-await waitForPageLoad(page); // After navigation
-await page.waitForSelector(".results"); // For specific elements
-await page.waitForURL("**/success"); // For specific URL
-```
-
-## Inspecting Page State
-
-### Screenshots
-
-```typescript
-await page.screenshot({ path: "tmp/screenshot.png" });
-await page.screenshot({ path: "tmp/full.png", fullPage: true });
-```
-
-### ARIA Snapshot (Element Discovery)
-
-Use `getAISnapshot()` to discover page elements. Returns YAML-formatted accessibility tree:
-
-```yaml
-- banner:
-  - link "Hacker News" [ref=e1]
-  - navigation:
-    - link "new" [ref=e2]
-- main:
-  - list:
-    - listitem:
-      - link "Article Title" [ref=e8]
-      - link "328 comments" [ref=e9]
-- contentinfo:
-  - textbox [ref=e10]
-    - /placeholder: "Search"
-```
-
-**Interpreting refs:**
-
-- `[ref=eN]` - Element reference for interaction (visible, clickable elements only)
-- `[checked]`, `[disabled]`, `[expanded]` - Element states
-- `[level=N]` - Heading level
-- `/url:`, `/placeholder:` - Element properties
-
-**Interacting with refs:**
-
-```typescript
-const snapshot = await client.getAISnapshot("hackernews");
-console.log(snapshot); // Find the ref you need
-
-const element = await client.selectSnapshotRef("hackernews", "e2");
-await element.click();
-```
-
-## Error Recovery
-
-Page state persists after failures. Debug with:
+Use `run --code` for debugging snapshots/screenshots:
 
 ```bash
-cd skills/dev-browser && pnpm exec tsx <<'EOF'
-import { connect } from "@/client.js";
-
-const client = await connect();
-const page = await client.page("hackernews");
-
-await page.screenshot({ path: "tmp/debug.png" });
-console.log({
-  url: page.url(),
-  title: await page.title(),
-  bodyText: await page.textContent("body").then((t) => t?.slice(0, 200)),
-});
-
-await client.disconnect();
-EOF
+dev-browser run --page debug --json --code '
+await page.screenshot({ path: "debug.png", fullPage: true });
+const snapshot = await client.getAISnapshot("debug");
+return { url: page.url(), title: await page.title(), snapshot };
+'
 ```
+
+## Notes
+
+- `run --code` accepts JavaScript only (no TypeScript syntax inside code body).
+- Same `--page` name is serialized by lock to prevent concurrent mutation conflicts.
+- Runtime data is stored under `~/.dev-browser/` (override with `DEV_BROWSER_HOME`).

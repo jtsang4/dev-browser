@@ -10,30 +10,31 @@ Always use Node.js/pnpm instead of Bun.
 # Install all workspace dependencies (from repo root)
 pnpm install
 
-# Start the dev-browser server
-pnpm --filter dev-browser start-server
+# Build CLI package (publishes `dev-browser` bin)
+pnpm --filter dev-browser-cli build
 
 # Run dev mode with watch
-pnpm --filter dev-browser dev
+pnpm --filter dev-browser-cli dev
 
 # Run tests (uses vitest)
-pnpm --filter dev-browser test
+pnpm --filter dev-browser-cli test
 
 # Run TypeScript check
-pnpm --filter dev-browser exec tsc --noEmit
+pnpm --filter dev-browser-cli exec tsc --noEmit
 ```
 
 ## Important: Before Completing Code Changes
 
 **Always run these checks before considering a task complete:**
 
-1. **TypeScript check**: `pnpm --filter dev-browser exec tsc --noEmit` - Ensure no type errors
-2. **Tests**: `pnpm --filter dev-browser test` - Ensure all tests pass
+1. **CLI TypeScript check**: `pnpm --filter dev-browser-cli exec tsc --noEmit`
+2. **CLI tests**: `pnpm --filter dev-browser-cli test`
+3. **CLI build**: `pnpm --filter dev-browser-cli build`
 
 Common TypeScript issues in this codebase:
 
 - Use `import type { ... }` for type-only imports (required by `verbatimModuleSyntax`)
-- Browser globals (`document`, `window`) in `page.evaluate()` callbacks need `declare const document: any;` since DOM lib is not included
+- Browser globals (`document`, `window`) in `page.evaluate()` callbacks need safe access via `globalThis`
 
 ## Project Architecture
 
@@ -43,60 +44,29 @@ This is a browser automation tool designed for developers and AI agents. It solv
 
 ### Structure
 
-All source code lives in `skills/dev-browser/`:
-
-- `src/index.ts` - Server: launches persistent Chromium context, exposes HTTP API for page management
-- `src/client.ts` - Client: connects to server, retrieves pages by name via CDP
-- `src/types.ts` - Shared TypeScript types for API requests/responses
-- `src/dom/` - DOM tree extraction utilities for LLM-friendly page inspection
-- `scripts/start-server.ts` - Entry point to start the server
-- `tmp/` - Directory for temporary automation scripts
-
-### Path Aliases
-
-The project uses `@/` as a path alias to `./src/`. This is configured in both `package.json` (via `imports`) and `tsconfig.json` (via `paths`).
-
-```typescript
-// Import from src/client.ts
-import { connect } from "@/client.js";
-
-// Import from src/index.ts
-import { serve } from "@/index.js";
-```
-
-### How It Works
-
-1. **Server** (`serve()` in `src/index.ts`):
-   - Launches Chromium with `launchPersistentContext` (preserves cookies, localStorage)
-   - Exposes HTTP API on port 9222 for page management
-   - Exposes CDP WebSocket endpoint on port 9223
-   - Pages are registered by name and persist until explicitly closed
-
-2. **Client** (`connect()` in `src/client.ts`):
-   - Connects to server's HTTP API
-   - Uses CDP `targetId` to reliably find pages across reconnections
-   - Returns standard Playwright `Page` objects for automation
-
-3. **Key API Endpoints**:
-   - `GET /` - Returns CDP WebSocket endpoint
-   - `GET /pages` - Lists all named pages
-   - `POST /pages` - Gets or creates a page by name (body: `{ name: string }`)
-   - `DELETE /pages/:name` - Closes a page
+- `packages/cli/` - CLI package to publish on npm (`dev-browser` command)
+  - `src/index.ts` - Commander-based CLI entrypoint
+  - `src/daemon.ts` - Daemon lifecycle commands
+  - `src/run.ts` - `run --code` execution command
+  - `src/workers/` - Daemon worker entrypoints used by built CLI
+  - `src/core/` - Internal runtime core (server/client/relay/types/snapshot)
+- `skills/dev-browser/` - Skill text layer only (`SKILL.md` + `references/`)
 
 ### Usage Pattern
 
-```typescript
-import { connect } from "@/client.js";
+```bash
+# Ensure daemon (launch mode)
+dev-browser daemon ensure --mode launch --json
 
-const client = await connect("http://localhost:9222");
-const page = await client.page("my-page"); // Gets existing or creates new
-await page.goto("https://example.com");
-// Page persists for future scripts
-await client.disconnect(); // Disconnects CDP but page stays alive on server
+# Run multi-step code on persistent page
+dev-browser run --page my-page --json --code 'await page.goto("https://example.com"); return { title: await page.title() };'
+
+# Stop daemon
+dev-browser daemon stop --mode launch
 ```
 
 ## Node.js Guidelines
 
-- Use `pnpm exec tsx` for running TypeScript files
-- Use `dotenv` or similar if you need to load `.env` files
-- Use `node:fs` for file system operations
+- Use `pnpm exec tsx` for TypeScript execution in development only
+- Use `node:fs` for filesystem operations
+- Use `pnpm` for all dependency and script operations

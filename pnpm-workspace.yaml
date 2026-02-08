@@ -1,6 +1,5 @@
 packages:
-  - skills/*
-  - extension
+  - packages/*
 
 onlyBuiltDependencies:
   - esbuild

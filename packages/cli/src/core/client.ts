@@ -244,7 +244,10 @@ export interface DevBrowserClient {
   getServerInfo: () => Promise<ServerInfo>;
 }
 
-export async function connect(serverUrl = "http://localhost:9222"): Promise<DevBrowserClient> {
+export async function connect(serverUrl?: string): Promise<DevBrowserClient> {
+  const resolvedServerUrl =
+    serverUrl ?? process.env.DEV_BROWSER_SERVER_URL ?? "http://127.0.0.1:9222";
+
   let browser: Browser | null = null;
   let wsEndpoint: string | null = null;
   let connectingPromise: Promise<Browser> | null = null;
@@ -264,7 +267,7 @@ export async function connect(serverUrl = "http://localhost:9222"): Promise<DevB
     connectingPromise = (async () => {
       try {
         // Fetch wsEndpoint from server
-        const res = await fetch(serverUrl);
+        const res = await fetch(resolvedServerUrl);
         if (!res.ok) {
           throw new Error(`Server returned ${res.status}: ${await res.text()}`);
         }
@@ -316,7 +319,7 @@ export async function connect(serverUrl = "http://localhost:9222"): Promise<DevB
   // Helper to get a page by name (used by multiple methods)
   async function getPage(name: string, options?: PageOptions): Promise<Page> {
     // Request the page from server (creates if doesn't exist)
-    const res = await fetch(`${serverUrl}/pages`, {
+    const res = await fetch(`${resolvedServerUrl}/pages`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ name, viewport: options?.viewport } satisfies GetPageRequest),
@@ -333,7 +336,7 @@ export async function connect(serverUrl = "http://localhost:9222"): Promise<DevB
     const b = await ensureConnected();
 
     // Check if we're in extension mode
-    const infoRes = await fetch(serverUrl);
+    const infoRes = await fetch(resolvedServerUrl);
     const info = (await infoRes.json()) as { mode?: string };
     const isExtensionMode = info.mode === "extension";
 
@@ -378,13 +381,13 @@ export async function connect(serverUrl = "http://localhost:9222"): Promise<DevB
     page: getPage,
 
     async list(): Promise<string[]> {
-      const res = await fetch(`${serverUrl}/pages`);
+      const res = await fetch(`${resolvedServerUrl}/pages`);
       const data = (await res.json()) as ListPagesResponse;
       return data.pages;
     },
 
     async close(name: string): Promise<void> {
-      const res = await fetch(`${serverUrl}/pages/${encodeURIComponent(name)}`, {
+      const res = await fetch(`${resolvedServerUrl}/pages/${encodeURIComponent(name)}`, {
         method: "DELETE",
       });
 
@@ -455,7 +458,7 @@ export async function connect(serverUrl = "http://localhost:9222"): Promise<DevB
     },
 
     async getServerInfo(): Promise<ServerInfo> {
-      const res = await fetch(serverUrl);
+      const res = await fetch(resolvedServerUrl);
       if (!res.ok) {
         throw new Error(`Server returned ${res.status}: ${await res.text()}`);
       }

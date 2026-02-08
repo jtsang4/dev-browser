@@ -1,155 +1,262 @@
 # Data Scraping Guide
 
-For large datasets (followers, posts, search results), **intercept and replay network requests** rather than scrolling and parsing the DOM. This is faster, more reliable, and handles pagination automatically.
+For large datasets (followers, posts, search results), prefer **network interception + replay** over DOM scrolling. APIs are faster, structured, and already paginated.
 
-## Why Not Scroll?
+## Workflow (CLI-first)
 
-Scrolling is slow, unreliable, and wastes time. APIs return structured data with pagination built in. Always prefer API replay.
+1. Capture one matching request + response
+2. Inspect response schema (array path + cursor path)
+3. Replay with pagination and dedupe
+4. Stop safely (cursor/rate limit/date cutoff)
 
-## Start Small, Then Scale
+Start daemon once:
 
-**Don't try to automate everything at once.** Work incrementally:
+```bash
+dev-browser daemon ensure --mode launch --json
+```
 
-1. **Capture one request** - verify you're intercepting the right endpoint
-2. **Inspect one response** - understand the schema before writing extraction code
-3. **Extract a few items** - make sure your parsing logic works
-4. **Then scale up** - add pagination loop only after the basics work
+### 1) Capture request + response
 
-This prevents wasting time debugging a complex script when the issue is a simple path like `data.user.timeline` vs `data.user.result.timeline`.
+Use one `run --code` and return exactly what you need to replay.
 
-## Step-by-Step Workflow
-
-### 1. Capture Request Details
-
-First, intercept a request to understand URL structure and required headers:
-
-```typescript
-import { connect, waitForPageLoad } from "@/client.js";
-import * as fs from "node:fs";
-
-const client = await connect();
-const page = await client.page("site");
+```bash
+dev-browser run --page scrape-demo --json --code '
+const MATCH = /\/(api|graphql)\//i;
+const TARGET_URL = "https://example.com/profile";
 
 let capturedRequest = null;
-page.on("request", (request) => {
+let capturedResponse = null;
+
+const onRequest = (request) => {
+  if (capturedRequest) return;
   const url = request.url();
-  // Look for API endpoints (adjust pattern for your target site)
-  if (url.includes("/api/") || url.includes("/graphql/")) {
-    capturedRequest = {
-      url: url,
-      headers: request.headers(),
-      method: request.method(),
-    };
-    fs.writeFileSync("tmp/request-details.json", JSON.stringify(capturedRequest, null, 2));
-    console.log("Captured request:", url.substring(0, 80) + "...");
-  }
-});
+  if (!MATCH.test(url)) return;
+  capturedRequest = {
+    url,
+    method: request.method(),
+    headers: request.headers(),
+    postData: request.postData(),
+  };
+  log({ type: "captured-request", url });
+};
 
-await page.goto("https://example.com/profile");
-await waitForPageLoad(page);
-await page.waitForTimeout(3000);
-
-await client.disconnect();
-```
-
-### 2. Capture Response to Understand Schema
-
-Save a raw response to inspect the data structure:
-
-```typescript
-page.on("response", async (response) => {
+const onResponse = async (response) => {
+  if (capturedResponse) return;
   const url = response.url();
-  if (url.includes("UserTweets") || url.includes("/api/data")) {
+  if (!MATCH.test(url)) return;
+  try {
     const json = await response.json();
-    fs.writeFileSync("tmp/api-response.json", JSON.stringify(json, null, 2));
-    console.log("Captured response");
+    capturedResponse = {
+      url,
+      status: response.status(),
+      topLevelKeys: json && typeof json === "object" ? Object.keys(json).slice(0, 20) : [],
+      body: json,
+    };
+    log({ type: "captured-response", url, status: response.status() });
+  } catch {
+    // Skip non-JSON responses
   }
+};
+
+page.on("request", onRequest);
+page.on("response", (response) => {
+  void onResponse(response);
 });
+
+const serverInfo = await client.getServerInfo();
+log({ type: "server", mode: serverInfo.mode });
+
+await page.goto(TARGET_URL);
+await helpers.waitForPageLoad(page);
+
+for (let i = 0; i < 40 && (!capturedRequest || !capturedResponse); i += 1) {
+  await page.waitForTimeout(250);
+}
+
+return { capturedRequest, capturedResponse };
+'
 ```
 
-Then analyze the structure to find:
+### 2) Inspect schema before writing loops
 
-- Where the data array lives (e.g., `data.user.result.timeline.instructions[].entries`)
-- Where pagination cursors are (e.g., `cursor-bottom` entries)
-- What fields you need to extract
+Run a focused schema probe. Keep this small and fast.
 
-### 3. Replay API with Pagination
+```bash
+dev-browser run --page scrape-demo --json --code '
+const MATCH = /\/(api|graphql)\//i;
+const TARGET_URL = page.url().startsWith("http") ? page.url() : "https://example.com/profile";
 
-Once you understand the schema, replay requests directly:
+function summarizeSchema(root) {
+  const arrayPaths = [];
+  const cursorPaths = [];
+  const queue = [{ path: "$", value: root }];
 
-```typescript
-import { connect } from "@/client.js";
-import * as fs from "node:fs";
+  while (queue.length > 0 && (arrayPaths.length < 10 || cursorPaths.length < 10)) {
+    const current = queue.shift();
+    if (!current) break;
 
-const client = await connect();
-const page = await client.page("site");
+    const { path, value } = current;
 
-const results = new Map(); // Use Map for deduplication
-const headers = JSON.parse(fs.readFileSync("tmp/request-details.json", "utf8")).headers;
-const baseUrl = "https://example.com/api/data";
+    if (Array.isArray(value)) {
+      arrayPaths.push({ path, length: value.length });
+      if (value.length > 0 && value[0] && typeof value[0] === "object") {
+        queue.push({ path: `${path}[0]`, value: value[0] });
+      }
+      continue;
+    }
 
-let cursor = null;
-let hasMore = true;
+    if (!value || typeof value !== "object") continue;
 
-while (hasMore) {
-  // Build URL with pagination cursor
-  const params = { count: 20 };
-  if (cursor) params.cursor = cursor;
-  const url = `${baseUrl}?params=${encodeURIComponent(JSON.stringify(params))}`;
-
-  // Execute fetch in browser context (has auth cookies/headers)
-  const response = await page.evaluate(
-    async ({ url, headers }) => {
-      const res = await fetch(url, { headers });
-      return res.json();
-    },
-    { url, headers }
-  );
-
-  // Extract data and cursor (adjust paths for your API)
-  const entries = response?.data?.entries || [];
-  for (const entry of entries) {
-    if (entry.type === "cursor-bottom") {
-      cursor = entry.value;
-    } else if (entry.id && !results.has(entry.id)) {
-      results.set(entry.id, {
-        id: entry.id,
-        text: entry.content,
-        timestamp: entry.created_at,
-      });
+    for (const [key, next] of Object.entries(value)) {
+      const nextPath = `${path}.${key}`;
+      const lower = key.toLowerCase();
+      if (lower.includes("cursor") || lower.includes("next") || lower.includes("token")) {
+        cursorPaths.push(nextPath);
+      }
+      if (next && typeof next === "object") {
+        queue.push({ path: nextPath, value: next });
+      }
     }
   }
 
-  console.log(`Fetched page, total: ${results.size}`);
-
-  // Check stop conditions
-  if (!cursor || entries.length === 0) hasMore = false;
-
-  // Rate limiting - be respectful
-  await new Promise((r) => setTimeout(r, 500));
+  return {
+    topLevelKeys: root && typeof root === "object" ? Object.keys(root).slice(0, 20) : [],
+    arrayPaths,
+    cursorPaths,
+  };
 }
 
-// Export results
-const data = Array.from(results.values());
-fs.writeFileSync("tmp/results.json", JSON.stringify(data, null, 2));
-console.log(`Saved ${data.length} items`);
+let schema = null;
 
-await client.disconnect();
+const onResponse = async (response) => {
+  if (schema) return;
+  const url = response.url();
+  if (!MATCH.test(url)) return;
+  try {
+    const json = await response.json();
+    schema = summarizeSchema(json);
+    log({ type: "schema-captured", url });
+  } catch {
+    // Skip non-JSON
+  }
+};
+
+page.on("response", (response) => {
+  void onResponse(response);
+});
+
+await page.goto(TARGET_URL);
+await helpers.waitForPageLoad(page);
+
+for (let i = 0; i < 40 && !schema; i += 1) {
+  await page.waitForTimeout(250);
+}
+
+return schema ?? { error: "No matching JSON response captured" };
+'
 ```
 
-## Key Patterns
+### 3) Replay with pagination
 
-| Pattern                 | Description                                            |
-| ----------------------- | ------------------------------------------------------ |
-| `page.on('request')`    | Capture outgoing request URL + headers                 |
-| `page.on('response')`   | Capture response data to understand schema             |
-| `page.evaluate(fetch)`  | Replay requests in browser context (inherits auth)     |
-| `Map` for deduplication | APIs often return overlapping data across pages        |
-| Cursor-based pagination | Look for `cursor`, `next_token`, `offset` in responses |
+After you know paths, replay in browser context so auth/session are reused.
 
-## Tips
+```bash
+dev-browser run --page scrape-demo --json --code '
+const BASE_URL = "https://example.com/api/data";
+const HEADERS = {
+  "accept": "application/json",
+};
+const PAGE_SIZE = 20;
+const MAX_PAGES = 50;
+let delayMs = 750;
 
-- **Extension mode**: `page.context().cookies()` doesn't work - capture auth headers from intercepted requests instead
-- **Rate limiting**: Add 500ms+ delays between requests to avoid blocks
-- **Stop conditions**: Check for empty results, missing cursor, or reaching a date/ID threshold
-- **GraphQL APIs**: URL params often include `variables` and `features` JSON objects - capture and reuse them
+function buildUrl(cursor) {
+  const url = new URL(BASE_URL);
+  url.searchParams.set("count", String(PAGE_SIZE));
+  if (cursor) url.searchParams.set("cursor", cursor);
+  return url.toString();
+}
+
+function extractPage(json) {
+  const entries = json?.data?.entries ?? [];
+  const nextCursor = entries.find((entry) => entry?.type === "cursor-bottom")?.value ?? null;
+  const items = entries.filter((entry) => entry?.id && entry?.type !== "cursor-bottom");
+  return { items, nextCursor };
+}
+
+const seen = new Set();
+const items = [];
+let cursor = null;
+let pageCount = 0;
+
+while (pageCount < MAX_PAGES) {
+  const url = buildUrl(cursor);
+  const api = await page.evaluate(
+    async ({ url, headers }) => {
+      const response = await fetch(url, {
+        headers,
+        credentials: "include",
+      });
+      let json = null;
+      try {
+        json = await response.json();
+      } catch {
+        // Non-JSON
+      }
+      return { status: response.status, json };
+    },
+    { url, headers: HEADERS }
+  );
+
+  if (api.status === 429) {
+    delayMs = Math.min(delayMs * 2, 10000);
+    log({ type: "rate-limit", page: pageCount + 1, backoffMs: delayMs });
+    await page.waitForTimeout(delayMs);
+    continue;
+  }
+
+  if (api.status >= 400 || !api.json) {
+    log({ type: "http-error", page: pageCount + 1, status: api.status });
+    break;
+  }
+
+  const { items: batch, nextCursor } = extractPage(api.json);
+  let added = 0;
+
+  for (const item of batch) {
+    const id = String(item.id ?? "");
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    items.push(item);
+    added += 1;
+  }
+
+  pageCount += 1;
+  log({ type: "page", page: pageCount, added, total: items.length, nextCursor });
+
+  if (!nextCursor || added === 0) break;
+
+  cursor = nextCursor;
+  await page.waitForTimeout(delayMs);
+}
+
+return {
+  total: items.length,
+  pageCount,
+  items,
+};
+'
+```
+
+### 4) Stop conditions and safety
+
+- Stop when cursor is missing, batch is empty, or no new IDs were added
+- Add hard caps (`MAX_PAGES`, max item count, or date/ID threshold)
+- Back off on `429` (exponential delay), and stop on repeated `4xx/5xx`
+- Keep one page name (for example `--page scrape-demo`) to reuse state across runs
+
+When done:
+
+```bash
+dev-browser daemon stop --mode launch
+```
