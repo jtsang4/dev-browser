@@ -14,9 +14,9 @@
     "test:run": "vitest run"
   },
   "devDependencies": {
-    "@types/chrome": "^0.1.32",
-    "typescript": "^5.0.0",
-    "vitest": "^3.0.0",
-    "wxt": "^0.20.0"
+    "@types/chrome": "^0.1.36",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.18",
+    "wxt": "^0.20.14"
   }
 }
