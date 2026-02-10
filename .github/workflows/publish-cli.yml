@@ -1,0 +1,69 @@
+name: Publish CLI
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish-cli:
+    name: Publish dev-browser CLI package
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.2
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "pnpm"
+          cache-dependency-path: pnpm-lock.yaml
+          registry-url: "https://registry.npmjs.org"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate tag version format and match package version
+        run: |
+          set -euo pipefail
+
+          if ! echo "$GITHUB_REF_NAME" | grep -Eq '^v[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "Tag must follow vX.Y.Z format, got: $GITHUB_REF_NAME"
+            exit 1
+          fi
+
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          PACKAGE_VERSION="$(node -p "require('./packages/cli/package.json').version")"
+
+          if [ "$TAG_VERSION" != "$PACKAGE_VERSION" ]; then
+            echo "Tag version ($TAG_VERSION) does not match packages/cli/package.json version ($PACKAGE_VERSION)."
+            exit 1
+          fi
+
+      - name: TypeScript check
+        run: pnpm --filter dev-browser-cli exec tsc --noEmit
+
+      - name: Run tests
+        run: pnpm --filter dev-browser-cli test
+
+      - name: Build package
+        run: pnpm --filter dev-browser-cli build
+
+      - name: Publish to npm
+        run: pnpm --filter dev-browser-cli publish --no-git-checks --access public --provenance
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
