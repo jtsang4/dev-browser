@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "packageManager": "pnpm@10.28.2",
   "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jtsang4/dev-browser.git",
+    "directory": "packages/cli"
+  },
   "bin": {
     "dev-browser": "./dist/index.js"
   },

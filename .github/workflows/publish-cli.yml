@@ -29,7 +29,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "24"
           cache: "pnpm"
           cache-dependency-path: pnpm-lock.yaml
           registry-url: "https://registry.npmjs.org"
@@ -63,7 +63,6 @@ jobs:
       - name: Build package
         run: pnpm --filter dev-browser-cli build
 
-      - name: Publish to npm
-        run: pnpm --filter dev-browser-cli publish --no-git-checks --access public --provenance
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      - name: Publish to npm (OIDC trusted publishing)
+        working-directory: packages/cli
+        run: npm publish --access public --provenance
