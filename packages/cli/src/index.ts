@@ -5,6 +5,7 @@ import { getRuntimePaths } from "./paths";
 import { runCode } from "./run";
 
 const modeSchema = z.enum(["launch", "extension"]);
+const engineSchema = z.enum(["patchright", "playwright"]);
 
 function parseIntOption(value: string): number {
   const parsed = Number.parseInt(value, 10);
@@ -29,6 +30,11 @@ async function main() {
     .description("Ensure daemon is running")
     .option("--mode <mode>", "Daemon mode: launch|extension", "launch")
     .option("--headless", "Headless browser mode")
+    .option(
+      "--engine <engine>",
+      "Browser engine (launch mode): patchright|playwright",
+      "patchright"
+    )
     .option("--json", "Output JSON")
     .option("--host <host>", "Server host", "127.0.0.1")
     .option("--port <port>", "Server HTTP port", parseIntOption, 9222)
@@ -37,9 +43,11 @@ async function main() {
     .action(async (opts) => {
       const runtimePaths = getRuntimePaths();
       const mode = modeSchema.parse(opts.mode);
+      const engine = engineSchema.parse(opts.engine);
       await ensureDaemon(runtimePaths, {
         mode,
         headless: Boolean(opts.headless),
+        engine,
         json: Boolean(opts.json),
         host: opts.host,
         port: opts.port,

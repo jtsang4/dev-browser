@@ -1,7 +1,8 @@
 import { mkdirSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { resolve } from "node:path";
 import { serve } from "../core/server";
-import { getRuntimePaths } from "../paths";
+import { getLaunchProfileDir, getRuntimePaths } from "../paths";
+import type { BrowserEngine } from "../types";
 
 function parseArgs(args: string[]) {
   const options: {
@@ -9,6 +10,7 @@ function parseArgs(args: string[]) {
     port: number;
     cdpPort: number;
     headless: boolean;
+    engine: BrowserEngine;
     idleTtlMs: number;
     runtimeRoot?: string;
   } = {
@@ -16,6 +18,7 @@ function parseArgs(args: string[]) {
     port: 9222,
     cdpPort: 9223,
     headless: false,
+    engine: "patchright",
     idleTtlMs: 1_800_000,
   };
 
@@ -53,6 +56,12 @@ function parseArgs(args: string[]) {
           options.headless = true;
         }
         break;
+      case "--engine":
+        if (value === "patchright" || value === "playwright") {
+          options.engine = value;
+          index += 1;
+        }
+        break;
       case "--idle-ttl-ms":
         if (value) {
           options.idleTtlMs = Number.parseInt(value, 10);
@@ -77,7 +86,7 @@ const options = parseArgs(process.argv.slice(2));
 const runtimePaths = options.runtimeRoot
   ? getRuntimePaths(resolve(options.runtimeRoot))
   : getRuntimePaths();
-const profileDir = join(runtimePaths.data, "profiles", "launch");
+const profileDir = getLaunchProfileDir(runtimePaths, options.engine);
 
 mkdirSync(profileDir, { recursive: true });
 
@@ -86,6 +95,7 @@ const server = await serve({
   port: options.port,
   cdpPort: options.cdpPort,
   headless: options.headless,
+  engine: options.engine,
   idleTtlMs: options.idleTtlMs,
   profileDir,
   serverUrl: `http://${options.host}:${options.port}`,

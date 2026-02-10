@@ -1,7 +1,7 @@
 /**
  * CDP Relay Server for Chrome Extension mode.
  *
- * Bridges Playwright CDP clients to the browser extension, while preserving
+ * Bridges Patchright CDP clients to the browser extension, while preserving
  * named page semantics used by the rest of the project.
  */
 
@@ -46,7 +46,7 @@ interface ConnectedTarget {
   targetInfo: TargetInfo;
 }
 
-interface PlaywrightClient {
+interface PatchrightClient {
   id: string;
   ws: WSContext;
   knownTargets: Set<string>;
@@ -101,7 +101,7 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
 
   const connectedTargets = new Map<string, ConnectedTarget>();
   const namedPages = new Map<string, string>();
-  const playwrightClients = new Map<string, PlaywrightClient>();
+  const patchrightClients = new Map<string, PatchrightClient>();
   let extensionWs: WSContext | null = null;
 
   const extensionPendingRequests = new Map<
@@ -134,6 +134,7 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
       extensionConnected: extensionWs !== null,
       wsEndpoint,
       lastActivityAt,
+      engine: null,
     };
   }
 
@@ -154,20 +155,21 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
       headless: false,
       pageNames: Array.from(namedPages.keys()),
       extensionConnected: extensionWs !== null,
+      engine: null,
     };
   }
 
-  function sendToPlaywright(message: CDPResponse | CDPEvent, clientId?: string) {
+  function sendToPatchright(message: CDPResponse | CDPEvent, clientId?: string) {
     const messageStr = JSON.stringify(message);
     if (clientId) {
-      const client = playwrightClients.get(clientId);
+      const client = patchrightClients.get(clientId);
       if (client) {
         client.ws.send(messageStr);
       }
       return;
     }
 
-    for (const client of playwrightClients.values()) {
+    for (const client of patchrightClients.values()) {
       client.ws.send(messageStr);
     }
   }
@@ -187,7 +189,7 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
     };
 
     if (clientId) {
-      const client = playwrightClients.get(clientId);
+      const client = patchrightClients.get(clientId);
       if (client && !client.knownTargets.has(target.targetId)) {
         client.knownTargets.add(target.targetId);
         client.ws.send(JSON.stringify(event));
@@ -195,7 +197,7 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
       return;
     }
 
-    for (const client of playwrightClients.values()) {
+    for (const client of patchrightClients.values()) {
       if (!client.knownTargets.has(target.targetId)) {
         client.knownTargets.add(target.targetId);
         client.ws.send(JSON.stringify(event));
@@ -329,6 +331,7 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
       wsEndpoint: `ws://${host}:${port}/cdp`,
       extensionConnected: extensionWs !== null,
       mode: "extension",
+      engine: null,
     };
     return c.json(response);
   });
@@ -455,13 +458,13 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
       return {
         onOpen(_event, ws) {
           markActivity();
-          if (playwrightClients.has(clientId)) {
+          if (patchrightClients.has(clientId)) {
             ws.close(1000, "Client ID already connected");
             return;
           }
 
-          playwrightClients.set(clientId, { id: clientId, ws, knownTargets: new Set() });
-          log(`Playwright client connected: ${clientId}`);
+          patchrightClients.set(clientId, { id: clientId, ws, knownTargets: new Set() });
+          log(`Patchright client connected: ${clientId}`);
         },
 
         async onMessage(event) {
@@ -475,7 +478,7 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
 
           const { id, sessionId, method, params } = message;
           if (!extensionWs) {
-            sendToPlaywright(
+            sendToPatchright(
               {
                 id,
                 sessionId,
@@ -500,7 +503,7 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
               (params as { discover?: boolean })?.discover
             ) {
               for (const target of connectedTargets.values()) {
-                sendToPlaywright(
+                sendToPatchright(
                   {
                     method: "Target.targetCreated",
                     params: {
@@ -525,9 +528,9 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
               }
             }
 
-            sendToPlaywright({ id, sessionId, result }, clientId);
+            sendToPatchright({ id, sessionId, result }, clientId);
           } catch (error) {
-            sendToPlaywright(
+            sendToPatchright(
               {
                 id,
                 sessionId,
@@ -540,12 +543,12 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
 
         onClose() {
           markActivity();
-          playwrightClients.delete(clientId);
-          log(`Playwright client disconnected: ${clientId}`);
+          patchrightClients.delete(clientId);
+          log(`Patchright client disconnected: ${clientId}`);
         },
 
         onError(event) {
-          log(`Playwright WebSocket error [${clientId}]:`, event);
+          log(`Patchright WebSocket error [${clientId}]:`, event);
         },
       };
     })
@@ -630,7 +633,7 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
                 }
               }
 
-              sendToPlaywright({
+              sendToPatchright({
                 method: "Target.detachedFromTarget",
                 params: detachParams,
               });
@@ -646,14 +649,14 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
                 }
               }
 
-              sendToPlaywright({
+              sendToPatchright({
                 method: "Target.targetInfoChanged",
                 params: infoParams,
               });
               return;
             }
 
-            sendToPlaywright({ sessionId, method, params });
+            sendToPatchright({ sessionId, method, params });
           }
         },
 
@@ -672,10 +675,10 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
           connectedTargets.clear();
           namedPages.clear();
 
-          for (const client of playwrightClients.values()) {
+          for (const client of patchrightClients.values()) {
             client.ws.close(1000, "Extension disconnected");
           }
-          playwrightClients.clear();
+          patchrightClients.clear();
         },
 
         onError(event) {
@@ -710,10 +713,10 @@ export async function serveRelay(options: RelayOptions = {}): Promise<RelayServe
     cleanupPromise = (async () => {
       clearInterval(idleInterval);
 
-      for (const client of playwrightClients.values()) {
+      for (const client of patchrightClients.values()) {
         client.ws.close(1000, "Server stopped");
       }
-      playwrightClients.clear();
+      patchrightClients.clear();
 
       extensionWs?.close(1000, "Server stopped");
       extensionWs = null;

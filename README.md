@@ -51,7 +51,11 @@ Start daemon when needed:
 
 ```bash
 dev-browser daemon ensure --mode launch --json
+# optional: choose browser engine explicitly (default: patchright)
+dev-browser daemon ensure --mode launch --engine playwright --json
 ```
+
+Launch mode stores profile data per engine under `~/.dev-browser/data/profiles/launch/browser-data/<engine>`.
 
 ### Chrome Extension (Optional)
 

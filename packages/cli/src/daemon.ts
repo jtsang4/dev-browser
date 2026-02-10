@@ -4,7 +4,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { execa } from "execa";
 import { z } from "zod";
-import type { RuntimePaths, ServerMode } from "./types";
+import type { BrowserEngine, RuntimePaths, ServerMode } from "./types";
 import { ensureRuntimePaths, getErrFile, getLogFile, getStateFile } from "./paths";
 import { logger } from "./logger";
 import {
@@ -24,6 +24,7 @@ import {
 const ensureOptionsSchema = z.object({
   mode: z.enum(["launch", "extension"]).default("launch"),
   headless: z.boolean().default(false),
+  engine: z.enum(["patchright", "playwright"]).optional(),
   json: z.boolean().default(false),
   silent: z.boolean().default(false),
   port: z.number().int().min(1).max(65535).default(9222),
@@ -56,6 +57,7 @@ const logsOptionsSchema = z.object({
 interface EnsureOptions {
   mode?: ServerMode;
   headless?: boolean;
+  engine?: BrowserEngine;
   json?: boolean;
   silent?: boolean;
   port?: number;
@@ -101,50 +103,75 @@ function stateToSummary(state: {
   pid: number;
   serverUrl: string;
   wsEndpoint: string;
+  engine?: BrowserEngine | null;
 }) {
   return {
     mode: state.mode,
     pid: state.pid,
     serverUrl: state.serverUrl,
     wsEndpoint: state.wsEndpoint,
+    engine: state.engine ?? null,
   };
 }
 
 export async function ensureDaemon(runtimePaths: RuntimePaths, options: EnsureOptions) {
   const parsed = ensureOptionsSchema.parse(options);
   const mode = parsed.mode;
+  const requestedEngine = parsed.engine ?? "patchright";
   ensureRuntimePaths(runtimePaths);
 
   const existingState = readManagedState(runtimePaths, mode);
   if (existingState && isProcessAlive(existingState.pid)) {
     const health = await getHealth(existingState.serverUrl, 1000);
     if (health && health.mode === mode) {
-      const payload = {
-        running: true,
-        startedNow: false,
-        mode,
-        serverUrl: existingState.serverUrl,
-        wsEndpoint: health.wsEndpoint,
-        pid: existingState.pid,
-        stateFile: getStateFile(runtimePaths, mode),
-        extensionConnected: health.extensionConnected,
-      };
+      const existingEngine =
+        mode === "launch" ? (health.engine ?? existingState.engine ?? "patchright") : null;
 
-      if (parsed.json) {
-        console.log(JSON.stringify(payload, null, 2));
-      } else if (!parsed.silent) {
-        console.log(`Daemon already running (${mode})`);
-        console.log(`  PID: ${payload.pid}`);
-        console.log(`  Server: ${payload.serverUrl}`);
-        console.log(`  WS: ${payload.wsEndpoint}`);
+      if (mode === "launch" && parsed.engine && existingEngine !== requestedEngine) {
+        logger.info(
+          {
+            mode,
+            pid: existingState.pid,
+            fromEngine: existingEngine,
+            toEngine: requestedEngine,
+          },
+          "daemon launch engine mismatch; restarting"
+        );
+
+        try {
+          process.kill(existingState.pid, "SIGTERM");
+        } catch {
+          // Ignore stale process errors.
+        }
+      } else {
+        const payload = {
+          running: true,
+          startedNow: false,
+          mode,
+          engine: existingEngine,
+          serverUrl: existingState.serverUrl,
+          wsEndpoint: health.wsEndpoint,
+          pid: existingState.pid,
+          stateFile: getStateFile(runtimePaths, mode),
+          extensionConnected: health.extensionConnected,
+        };
+
+        if (parsed.json) {
+          console.log(JSON.stringify(payload, null, 2));
+        } else if (!parsed.silent) {
+          console.log(`Daemon already running (${mode})`);
+          console.log(`  PID: ${payload.pid}`);
+          console.log(`  Server: ${payload.serverUrl}`);
+          console.log(`  WS: ${payload.wsEndpoint}`);
+        }
+
+        logger.info(
+          { mode, engine: payload.engine, pid: payload.pid, serverUrl: payload.serverUrl },
+          "daemon already running"
+        );
+
+        return payload;
       }
-
-      logger.info(
-        { mode, pid: payload.pid, serverUrl: payload.serverUrl },
-        "daemon already running"
-      );
-
-      return payload;
     }
 
     if (!health) {
@@ -181,7 +208,9 @@ export async function ensureDaemon(runtimePaths: RuntimePaths, options: EnsureOp
     String(parsed.idleTtlMs),
     "--runtime-root",
     runtimePaths.root,
-    ...(mode === "launch" ? ["--headless", String(parsed.headless)] : []),
+    ...(mode === "launch"
+      ? ["--headless", String(parsed.headless), "--engine", requestedEngine]
+      : []),
   ];
 
   const stdoutFd = openSync(logFile, "a");
@@ -229,6 +258,21 @@ export async function ensureDaemon(runtimePaths: RuntimePaths, options: EnsureOp
     );
   }
 
+  if (mode === "launch") {
+    const resolvedEngine = health.engine ?? "patchright";
+    if (parsed.engine && resolvedEngine !== requestedEngine) {
+      try {
+        process.kill(bootstrapPid, "SIGTERM");
+      } catch {
+        // Ignore race.
+      }
+      throw new Error(
+        `Port ${parsed.port} is already serving launch engine ${resolvedEngine}. ` +
+          `Use --engine ${resolvedEngine}, wait for shutdown, or choose --port.`
+      );
+    }
+  }
+
   const daemonPid = health.pid;
   writePid(runtimePaths, mode, daemonPid);
 
@@ -241,6 +285,7 @@ export async function ensureDaemon(runtimePaths: RuntimePaths, options: EnsureOp
     port: parsed.port,
     cdpPort: parsed.cdpPort,
     headless: parsed.headless,
+    engine: mode === "launch" ? requestedEngine : null,
     idleTtlMs: parsed.idleTtlMs,
     serverUrl,
     wsEndpoint: health.wsEndpoint,
@@ -254,6 +299,7 @@ export async function ensureDaemon(runtimePaths: RuntimePaths, options: EnsureOp
     running: true,
     startedNow: true,
     mode,
+    engine: mode === "launch" ? requestedEngine : null,
     serverUrl,
     wsEndpoint: health.wsEndpoint,
     pid: daemonPid,
@@ -268,9 +314,21 @@ export async function ensureDaemon(runtimePaths: RuntimePaths, options: EnsureOp
     console.log(`  PID: ${daemonPid}`);
     console.log(`  Server: ${serverUrl}`);
     console.log(`  WS: ${health.wsEndpoint}`);
+    if (mode === "launch") {
+      console.log(`  Engine: ${requestedEngine}`);
+    }
   }
 
-  logger.info({ mode, pid: daemonPid, serverUrl, wsEndpoint: health.wsEndpoint }, "daemon started");
+  logger.info(
+    {
+      mode,
+      engine: mode === "launch" ? requestedEngine : null,
+      pid: daemonPid,
+      serverUrl,
+      wsEndpoint: health.wsEndpoint,
+    },
+    "daemon started"
+  );
 
   return payload;
 }
@@ -302,6 +360,7 @@ export async function daemonStatus(runtimePaths: RuntimePaths, options: StatusOp
         mode,
         running: alive && runtime !== null,
         pid: state.pid,
+        engine: mode === "launch" ? (runtime?.engine ?? state.engine ?? "patchright") : null,
         serverUrl: state.serverUrl,
         wsEndpoint: runtime?.wsEndpoint ?? state.wsEndpoint,
         stateFile: getStateFile(runtimePaths, mode),

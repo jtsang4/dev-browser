@@ -1,8 +1,8 @@
 /**
  * ARIA Snapshot module for dev-browser.
  *
- * Provides Playwright-compatible ARIA snapshots with cross-connection ref persistence.
- * Refs are stored on window.__devBrowserRefs and survive across Playwright reconnections.
+ * Provides Patchright-compatible ARIA snapshots with cross-connection ref persistence.
+ * Refs are stored on window.__devBrowserRefs and survive across Patchright reconnections.
  *
  * Usage:
  *   import { getSnapshotScript } from './snapshot';

@@ -1,6 +1,7 @@
 // API request/response types - shared between client and server
 
 export type ServerMode = "launch" | "extension";
+export type BrowserEngine = "patchright" | "playwright";
 
 export interface RuntimePaths {
   root: string;
@@ -16,10 +17,11 @@ export interface ServeOptions {
   host?: string;
   headless?: boolean;
   cdpPort?: number;
+  engine?: BrowserEngine;
   idleTtlMs?: number;
   serverUrl?: string;
   runtimePaths?: RuntimePaths;
-  /** Directory to store persistent browser profiles (cookies, localStorage, etc.) */
+  /** Engine-specific userDataDir for persistent browser profile */
   profileDir?: string;
 }
 
@@ -48,6 +50,7 @@ export interface ServerInfoResponse {
   wsEndpoint: string;
   mode?: ServerMode;
   extensionConnected?: boolean;
+  engine?: BrowserEngine | null;
 }
 
 export interface HealthResponse {
@@ -59,6 +62,7 @@ export interface HealthResponse {
   extensionConnected: boolean | null;
   wsEndpoint: string;
   lastActivityAt: string;
+  engine?: BrowserEngine | null;
 }
 
 export interface RuntimeResponse {
@@ -77,6 +81,7 @@ export interface RuntimeResponse {
   headless: boolean;
   pageNames: string[];
   extensionConnected: boolean | null;
+  engine?: BrowserEngine | null;
 }
 
 export interface ShutdownRequest {

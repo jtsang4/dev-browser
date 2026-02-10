@@ -13,6 +13,8 @@ Start daemon once:
 
 ```bash
 dev-browser daemon ensure --mode launch --json
+# optional: choose launch engine (default: patchright)
+dev-browser daemon ensure --mode launch --engine playwright --json
 ```
 
 ### 1) Capture request + response

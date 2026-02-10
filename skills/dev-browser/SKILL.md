@@ -27,6 +27,8 @@ Ensure daemon is running before actions:
 
 ```bash
 dev-browser daemon ensure --mode launch --json
+# optional: choose launch engine (default: patchright)
+dev-browser daemon ensure --mode launch --engine playwright --json
 ```
 
 Use extension mode when user wants their existing Chrome session:

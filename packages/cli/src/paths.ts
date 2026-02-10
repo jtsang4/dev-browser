@@ -1,7 +1,7 @@
 import { mkdirSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
-import type { RuntimePaths, ServerMode } from "./types";
+import type { BrowserEngine, RuntimePaths, ServerMode } from "./types";
 
 export const DEFAULT_DEV_BROWSER_HOME = ".dev-browser";
 
@@ -53,4 +53,8 @@ export function getErrFile(paths: RuntimePaths, mode: ServerMode): string {
 
 export function getPageLockFile(paths: RuntimePaths, pageName: string): string {
   return join(paths.run, "locks", `${encodeURIComponent(pageName)}.lock`);
+}
+
+export function getLaunchProfileDir(paths: RuntimePaths, engine: BrowserEngine): string {
+  return join(paths.data, "profiles", "launch", "browser-data", engine);
 }

@@ -1,4 +1,5 @@
 export type ServerMode = "launch" | "extension";
+export type BrowserEngine = "patchright" | "playwright";
 
 export interface RuntimePaths {
   root: string;
@@ -18,6 +19,7 @@ export interface HealthResponse {
   extensionConnected: boolean | null;
   wsEndpoint: string;
   lastActivityAt: string;
+  engine?: BrowserEngine | null;
 }
 
 export interface RuntimeResponse {
@@ -36,6 +38,7 @@ export interface RuntimeResponse {
   headless: boolean;
   pageNames: string[];
   extensionConnected: boolean | null;
+  engine?: BrowserEngine | null;
 }
 
 export interface ShutdownResponse {

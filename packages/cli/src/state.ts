@@ -1,5 +1,6 @@
 import { existsSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import type {
+  BrowserEngine,
   HealthResponse,
   RuntimePaths,
   RuntimeResponse,
@@ -15,6 +16,7 @@ export interface ManagedDaemonState {
   port: number;
   cdpPort: number;
   headless: boolean;
+  engine: BrowserEngine | null;
   idleTtlMs: number;
   serverUrl: string;
   wsEndpoint: string;

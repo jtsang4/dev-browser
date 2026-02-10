@@ -1,5 +1,5 @@
-import { chromium, type Browser, type Page, type ElementHandle } from "playwright";
 import type {
+  BrowserEngine,
   GetPageRequest,
   GetPageResponse,
   ListPagesResponse,
@@ -7,6 +7,23 @@ import type {
   ViewportSize,
 } from "./types";
 import { getSnapshotScript } from "./snapshot/browser-script";
+
+type Browser = import("playwright").Browser;
+type Page = import("playwright").Page;
+type ElementHandle = import("playwright").ElementHandle;
+
+interface CdpEngine {
+  chromium: {
+    connectOverCDP: (endpointURL: string) => Promise<Browser>;
+  };
+}
+
+async function resolveCdpEngine(engine: BrowserEngine = "patchright"): Promise<CdpEngine> {
+  if (engine === "playwright") {
+    return (await import("playwright")) as unknown as CdpEngine;
+  }
+  return (await import("patchright")) as unknown as CdpEngine;
+}
 
 /**
  * Options for waiting for page load
@@ -212,6 +229,7 @@ export interface ServerInfo {
   wsEndpoint: string;
   mode: "launch" | "extension";
   extensionConnected?: boolean;
+  engine?: BrowserEngine | null;
 }
 
 /**
@@ -235,7 +253,7 @@ export interface DevBrowserClient {
   getAISnapshot: (name: string) => Promise<string>;
   /**
    * Get an element handle by its ref from the last getAISnapshot call.
-   * Refs persist across Playwright connections.
+   * Refs persist across browser engine reconnections.
    */
   selectSnapshotRef: (name: string, ref: string) => Promise<ElementHandle | null>;
   /**
@@ -251,6 +269,7 @@ export async function connect(serverUrl?: string): Promise<DevBrowserClient> {
   let browser: Browser | null = null;
   let wsEndpoint: string | null = null;
   let connectingPromise: Promise<Browser> | null = null;
+  let connectedEngine: BrowserEngine | null = null;
 
   async function ensureConnected(): Promise<Browser> {
     // Return existing connection if still active
@@ -273,9 +292,12 @@ export async function connect(serverUrl?: string): Promise<DevBrowserClient> {
         }
         const info = (await res.json()) as ServerInfoResponse;
         wsEndpoint = info.wsEndpoint;
+        const engine = info.engine ?? "patchright";
 
         // Connect to the browser via CDP
-        browser = await chromium.connectOverCDP(wsEndpoint);
+        const cdpEngine = await resolveCdpEngine(engine);
+        browser = await cdpEngine.chromium.connectOverCDP(wsEndpoint);
+        connectedEngine = engine;
         return browser;
       } finally {
         connectingPromise = null;
@@ -401,6 +423,7 @@ export async function connect(serverUrl?: string): Promise<DevBrowserClient> {
       if (browser) {
         await browser.close();
         browser = null;
+        connectedEngine = null;
       }
     },
 
@@ -466,11 +489,13 @@ export async function connect(serverUrl?: string): Promise<DevBrowserClient> {
         wsEndpoint: string;
         mode?: string;
         extensionConnected?: boolean;
+        engine?: BrowserEngine | null;
       };
       return {
         wsEndpoint: info.wsEndpoint,
         mode: (info.mode as "launch" | "extension") ?? "launch",
         extensionConnected: info.extensionConnected,
+        engine: info.engine ?? connectedEngine,
       };
     },
   };

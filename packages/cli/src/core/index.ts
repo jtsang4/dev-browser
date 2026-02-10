@@ -1,9 +1,9 @@
 import express, { type Express, type Request, type Response } from "express";
-import { chromium, type BrowserContext, type Page } from "playwright";
 import { mkdirSync } from "node:fs";
 import type { Socket } from "node:net";
 import { join } from "node:path";
 import type {
+  BrowserEngine,
   GetPageRequest,
   GetPageResponse,
   HealthResponse,
@@ -33,6 +33,28 @@ export interface DevBrowserServer {
 interface PageEntry {
   page: Page;
   targetId: string;
+}
+
+type Page = import("playwright").Page;
+type BrowserContext = import("playwright").BrowserContext;
+
+interface LaunchEngine {
+  chromium: {
+    launchPersistentContext: (
+      userDataDir: string,
+      options: {
+        headless: boolean;
+        args: string[];
+      }
+    ) => Promise<BrowserContext>;
+  };
+}
+
+async function resolveEngine(engine: BrowserEngine = "patchright"): Promise<LaunchEngine> {
+  if (engine === "playwright") {
+    return (await import("playwright")) as unknown as LaunchEngine;
+  }
+  return (await import("patchright")) as unknown as LaunchEngine;
 }
 
 async function fetchWithRetry(
@@ -73,6 +95,7 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
   const port = options.port ?? 9222;
   const host = options.host ?? "127.0.0.1";
   const headless = options.headless ?? false;
+  const engine = options.engine ?? "patchright";
   const cdpPort = options.cdpPort ?? 9223;
   const idleTtlMs = options.idleTtlMs ?? 1_800_000;
   const serverUrl = options.serverUrl ?? `http://${host}:${port}`;
@@ -89,18 +112,21 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
     throw new Error("port and cdpPort must be different");
   }
 
-  const userDataDir = profileDir
-    ? join(profileDir, "browser-data")
-    : join(process.cwd(), ".browser-data");
+  const profileByEngineDir = profileDir ? profileDir : join(process.cwd(), ".browser-data", engine);
 
-  mkdirSync(userDataDir, { recursive: true });
-  console.log(`Using persistent browser profile: ${userDataDir}`);
+  mkdirSync(profileByEngineDir, { recursive: true });
+  console.log(`Using persistent browser profile (${engine}): ${profileByEngineDir}`);
 
-  const context: BrowserContext = await chromium.launchPersistentContext(userDataDir, {
-    headless,
-    args: [`--remote-debugging-port=${cdpPort}`],
-  });
-  console.log("Browser launched with persistent profile...");
+  const browserEngine = await resolveEngine(engine);
+
+  const context: BrowserContext = await browserEngine.chromium.launchPersistentContext(
+    profileByEngineDir,
+    {
+      headless,
+      args: [`--remote-debugging-port=${cdpPort}`],
+    }
+  );
+  console.log(`Browser launched with persistent profile (${engine})...`);
 
   const cdpResponse = await fetchWithRetry(`http://127.0.0.1:${cdpPort}/json/version`);
   const cdpInfo = (await cdpResponse.json()) as { webSocketDebuggerUrl: string };
@@ -126,6 +152,7 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
       extensionConnected: null,
       wsEndpoint,
       lastActivityAt,
+      engine,
     };
   }
 
@@ -146,6 +173,7 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
       headless,
       pageNames: Array.from(registry.keys()),
       extensionConnected: null,
+      engine,
     };
   }
 
@@ -164,7 +192,7 @@ export async function serve(options: ServeOptions = {}): Promise<DevBrowserServe
 
   app.get("/", (_req: Request, res: Response) => {
     markActivity();
-    const response: ServerInfoResponse = { wsEndpoint, mode: "launch" };
+    const response: ServerInfoResponse = { wsEndpoint, mode: "launch", engine };
     res.json(response);
   });
 
