@@ -1,8 +1,8 @@
 <p align="center">
-  <img src="assets/header.png" alt="Dev Browser - Browser automation for Claude Code" width="100%">
+  <img src="assets/header.png" alt="Dev Browser - Browser automation for agents" width="100%">
 </p>
 
-A browser automation plugin for [Claude Code](https://docs.anthropic.com/en/docs/claude-code) that lets Claude control your browser to test and verify your work as you develop.
+A browser automation tool for coding agents (and regular agents).
 
 **Key features:**
 
@@ -12,12 +12,11 @@ A browser automation plugin for [Claude Code](https://docs.anthropic.com/en/docs
 
 ## Prerequisites
 
-- [Claude Code](https://docs.anthropic.com/en/docs/claude-code) CLI installed
 - [Node.js](https://nodejs.org) (v18 or later) with pnpm
 
 ## Installation
 
-### Claude Code
+### Claude Code (plugin)
 
 ```
 /plugin marketplace add sawyerhood/dev-browser
@@ -26,25 +25,24 @@ A browser automation plugin for [Claude Code](https://docs.anthropic.com/en/docs
 
 Restart Claude Code after installation.
 
-### Amp / Codex
+### Any agent
 
-Copy the skill to your skills directory:
+Install CLI globally:
 
 ```bash
-# For Amp: ~/.claude/skills | For Codex: ~/.codex/skills
-SKILLS_DIR=~/.claude/skills  # or ~/.codex/skills
+pnpm add -g @jtsang/dev-browser-cli
+# or: npm install -g @jtsang/dev-browser-cli
+```
+
+Optional: copy the skill to your agent skills directory:
+
+```bash
+SKILLS_DIR=~/.codex/skills  # e.g. ~/.claude/skills, ~/.codex/skills
 
 mkdir -p $SKILLS_DIR
 git clone https://github.com/sawyerhood/dev-browser /tmp/dev-browser-skill
 cp -r /tmp/dev-browser-skill/skills/dev-browser $SKILLS_DIR/dev-browser
 rm -rf /tmp/dev-browser-skill
-```
-
-Install CLI globally (Amp and Codex):
-
-```bash
-pnpm add -g @jtsang/dev-browser-cli
-# or: npm install -g @jtsang/dev-browser-cli
 ```
 
 Start daemon when needed:
@@ -59,7 +57,7 @@ Launch mode stores profile data per engine under `~/.dev-browser/data/profiles/l
 
 ### Chrome Extension (Optional)
 
-The Chrome extension allows Dev Browser to control your existing Chrome browser instead of launching a separate Chromium instance. This gives you access to your logged-in sessions, bookmarks, and extensions.
+Use this to control your existing Chrome browser (sessions, bookmarks, extensions).
 
 **Installation:**
 
@@ -73,11 +71,11 @@ The Chrome extension allows Dev Browser to control your existing Chrome browser 
 
 1. Click the Dev Browser extension icon in Chrome's toolbar
 2. Toggle it to "Active" - this enables browser control
-3. Ask Claude to connect to your browser (e.g., "connect to my Chrome" or "use the extension")
+3. Ask your agent to connect to Chrome (e.g., "connect to my Chrome" or "use the extension")
 
-When active, Claude can control your existing Chrome tabs with all your logged-in sessions, cookies, and extensions intact.
+When active, your agent can control existing Chrome tabs with your logged-in sessions.
 
-## Permissions
+## Claude Code permissions (optional)
 
 To skip permission prompts, add to `~/.claude/settings.json`:
 
@@ -93,7 +91,7 @@ Or run with `claude --dangerously-skip-permissions` (skips all prompts).
 
 ## Usage
 
-Just ask Claude to interact with your browser:
+Use from your agent prompt:
 
 > "Open localhost:3000 and verify the signup flow works"
 
