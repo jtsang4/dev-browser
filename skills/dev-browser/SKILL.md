@@ -19,8 +19,8 @@ Use `dev-browser` CLI to run multi-step browser automation with persistent page 
 If `dev-browser` command is missing, install CLI globally:
 
 ```bash
-pnpm add -g dev-browser-cli
-# or: npm install -g dev-browser-cli
+pnpm add -g @jtsang/dev-browser-cli
+# or: npm install -g @jtsang/dev-browser-cli
 ```
 
 Ensure daemon is running before actions:

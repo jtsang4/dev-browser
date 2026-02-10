@@ -43,8 +43,8 @@ rm -rf /tmp/dev-browser-skill
 Install CLI globally (Amp and Codex):
 
 ```bash
-pnpm add -g dev-browser-cli
-# or: npm install -g dev-browser-cli
+pnpm add -g @jtsang/dev-browser-cli
+# or: npm install -g @jtsang/dev-browser-cli
 ```
 
 Start daemon when needed:
