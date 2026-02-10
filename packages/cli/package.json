@@ -1,6 +1,6 @@
 {
-  "name": "dev-browser-cli",
-  "version": "0.0.1",
+  "name": "@jtsang/dev-browser-cli",
+  "version": "1.0.0",
   "packageManager": "pnpm@10.28.2",
   "type": "module",
   "bin": {

@@ -1,5 +1,5 @@
 {
-  "name": "dev-browser-extension",
+  "name": "@jtsang/dev-browser-extension",
   "version": "1.0.0",
   "packageManager": "pnpm@10.28.2",
   "type": "module",
