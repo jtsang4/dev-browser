@@ -58,8 +58,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install Playwright browsers
-        run: pnpm --filter dev-browser-cli exec playwright install --with-deps chromium
+      - name: Install Patchright browsers
+        run: pnpm --filter dev-browser-cli exec patchright install --with-deps chromium
 
       - name: Run tests
         run: pnpm --filter dev-browser-cli test
