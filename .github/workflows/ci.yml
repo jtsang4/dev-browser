@@ -34,7 +34,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: TypeScript check
-        run: pnpm --filter dev-browser exec tsc --noEmit
+        run: pnpm --filter dev-browser-cli exec tsc --noEmit
 
   test:
     name: Tests
@@ -59,10 +59,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Install Playwright browsers
-        run: pnpm --filter dev-browser exec playwright install --with-deps chromium
+        run: pnpm --filter dev-browser-cli exec playwright install --with-deps chromium
 
       - name: Run tests
-        run: pnpm --filter dev-browser test
+        run: pnpm --filter dev-browser-cli test
 
       - name: Build extension
         run: pnpm --filter dev-browser-extension build
