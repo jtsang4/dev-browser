@@ -70,3 +70,7 @@ dev-browser daemon stop --mode launch
 - Use `pnpm exec tsx` for TypeScript execution in development only
 - Use `node:fs` for filesystem operations
 - Use `pnpm` for all dependency and script operations
+
+## Publish `dev-browser` CLI
+
+- To publish `@jtsang/dev-browser-cli` (the `dev-browser` command), push a `vX.Y.Z` tag where `X.Y.Z` exactly matches `packages/cli/package.json` `version`.
